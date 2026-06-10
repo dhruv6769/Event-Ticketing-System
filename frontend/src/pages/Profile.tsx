@@ -166,10 +166,16 @@ export default function Profile() {
 
   const [userProfile, setUserProfile] = useState(() => {
     const saved = localStorage.getItem('userProfile');
-    if (saved) return JSON.parse(saved);
-    const d = { name: 'Virat Kohli', email: 'virat@ticketapp.com', mobile: '9876543210', city: 'Mumbai', avatar: '' };
-    localStorage.setItem('userProfile', JSON.stringify(d));
-    return d;
+    const defaultProfile = { name: 'Virat Kohli', email: 'virat@ticketapp.com', mobile: '9876543210', city: 'Mumbai', avatar: '' };
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return {
+        ...defaultProfile,
+        ...parsed
+      };
+    }
+    localStorage.setItem('userProfile', JSON.stringify(defaultProfile));
+    return defaultProfile;
   });
 
   const [walletBalance, setWalletBalance] = useState(() => {
@@ -260,6 +266,7 @@ export default function Profile() {
               city: approvedProfile.city || (localStorage.getItem('userProfile') ? (JSON.parse(localStorage.getItem('userProfile')!).city || 'Mumbai') : 'Mumbai')
             };
             setUserProfile(updatedProfile);
+            setEditForm(updatedProfile);
             localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
 
             if (data.bookings) {

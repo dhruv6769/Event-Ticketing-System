@@ -282,7 +282,13 @@ export default function Admin() {
       }
       
       const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-      const updatedUsers = users.map((u: any) => u.email === pendingUpdate.email ? { ...u, profile: pendingUpdate } : u);
+      const userIndex = users.findIndex((u: any) => u.email === pendingUpdate.email);
+      if (userIndex > -1) {
+        users[userIndex].profile = pendingUpdate;
+      } else {
+        users.push({ email: pendingUpdate.email, profile: pendingUpdate, status: 'Active' });
+      }
+      const updatedUsers = users;
       
       // Update local admin's own profile too if they approved their own update
       const currentProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
