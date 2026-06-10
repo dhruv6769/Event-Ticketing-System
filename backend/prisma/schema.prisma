@@ -104,7 +104,6 @@ model Event {
   status             EventStatus          @default(UPCOMING)
 
   venue              Venue                @relation(fields: [venue_id], references: [id])
-  bookings           Booking[]
   seat_locks         SeatLock[]
   reviews            Review[]
   waitlists          Waitlist[]
@@ -131,14 +130,16 @@ model Seat {
   status             SeatStatus           @default(AVAILABLE)
 
   section            Section              @relation(fields: [section_id], references: [id])
-  booking_seats      BookingSeat[]
   seat_locks         SeatLock[]
 }
 
 model Booking {
   id                 String               @id @default(uuid())
   user_id            String
-  event_id           String
+  event_title        String
+  event_venue        String
+  event_date         String
+  seats_summary      String
   total_amount       Float
   payment_method     String               @default("QUICK_UPI")
   payment_status     PaymentStatus        @default(PENDING)
@@ -147,18 +148,6 @@ model Booking {
   created_at         DateTime             @default(now())
 
   user               User                 @relation(fields: [user_id], references: [id])
-  event              Event                @relation(fields: [event_id], references: [id])
-  booking_seats      BookingSeat[]
-}
-
-model BookingSeat {
-  id                 String               @id @default(uuid())
-  booking_id         String
-  seat_id            String
-  price_at_booking   Float
-
-  booking            Booking              @relation(fields: [booking_id], references: [id])
-  seat               Seat                 @relation(fields: [seat_id], references: [id])
 }
 
 model SeatLock {

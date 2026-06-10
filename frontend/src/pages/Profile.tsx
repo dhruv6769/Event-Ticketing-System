@@ -229,12 +229,55 @@ export default function Profile() {
 
   useEffect(() => {
     if (localStorage.getItem('isLoggedIn') !== 'true') { navigate('/login'); return; }
-    const savedBookings = JSON.parse(localStorage.getItem('myBookings') || '[]');
-    setBookings(savedBookings);
-    savedBookings.forEach(async (b: any, idx: number) => {
-      const url = await QRCode.toDataURL(`TIX-${b.event}-${idx}`);
-      setQrCodes((prev) => ({ ...prev, [idx]: url }));
-    });
+    
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+          const res = await fetch(`${API_URL}/api/users/profile`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.bookings) {
+              const mappedBookings = data.bookings.map((b: any) => ({
+                event: b.event_title,
+                date: b.event_date,
+                venue: b.event_venue,
+                seats: b.seats_summary,
+                price: `₹${b.total_amount}`,
+                status: b.payment_status === 'SUCCESS' || b.status === 'CONFIRMED' ? 'Confirmed' : 'Confirmed'
+              }));
+              setBookings(mappedBookings);
+              
+              mappedBookings.forEach(async (b: any, idx: number) => {
+                const url = await QRCode.toDataURL(`TIX-${b.event}-${idx}`);
+                setQrCodes((prev) => ({ ...prev, [idx]: url }));
+              });
+              
+              // update balance visually
+              if (data.quick_upi_balance !== undefined) {
+                setWalletBalance(data.quick_upi_balance);
+              }
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch profile", err);
+      }
+      
+      // Fallback
+      const savedBookings = JSON.parse(localStorage.getItem('myBookings') || '[]');
+      setBookings(savedBookings);
+      savedBookings.forEach(async (b: any, idx: number) => {
+        const url = await QRCode.toDataURL(`TIX-${b.event}-${idx}`);
+        setQrCodes((prev) => ({ ...prev, [idx]: url }));
+      });
+    };
+    
+    fetchProfile();
     setTransactions(JSON.parse(localStorage.getItem('myTransactions') || '[]'));
     setPendingUpdate(JSON.parse(localStorage.getItem('pendingProfileUpdate') || 'null'));
     setSupportTickets(JSON.parse(localStorage.getItem('supportTickets') || '[]'));

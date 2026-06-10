@@ -204,74 +204,65 @@ export default function Login() {
     setTimeout(() => setAlertConfig((prev) => ({ ...prev, show: false })), 2000);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-    const currentProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
-    const userFunds = JSON.parse(localStorage.getItem('userDataMap') || '{}');
-    if (currentProfile.email && currentProfile.email !== email) {
-      userFunds[currentProfile.email] = {
-        ...(userFunds[currentProfile.email] || {}),
-        balance: localStorage.getItem('walletBalance'),
-        tx: localStorage.getItem('myTransactions'),
-        bookings: localStorage.getItem('myBookings'),
-        tickets: localStorage.getItem('supportTickets'),
-        notifications: localStorage.getItem('myNotifications'),
-        coupons: localStorage.getItem('myCoupons'),
-        upiPin: localStorage.getItem('upiPin') || null,
-      };
-      localStorage.setItem('userDataMap', JSON.stringify(userFunds));
-    }
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
     if (!isLogin) {
       if (password !== confirmPassword) { showAlert('Passwords do not match!'); return; }
-      const emailExists = registeredUsers.some((u: any) => u.email === email);
-      if (emailExists) { showAlert('This email is already registered. Please login instead.'); return; }
-      const newProfile = { name, email, mobile: '', city: '' };
-      localStorage.setItem('userProfile', JSON.stringify(newProfile));
-      registeredUsers.push({ email, password, profile: newProfile });
-      localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
-      localStorage.setItem('myBookings', '[]');
-      localStorage.setItem('myTransactions', '[]');
-      localStorage.setItem('supportTickets', '[]');
-      localStorage.setItem('myNotifications', '[]');
-      localStorage.setItem('myCoupons', '[]');
-      localStorage.removeItem('pendingProfileUpdate');
-      localStorage.removeItem('upiPin');
-      localStorage.setItem('walletBalance', '0');
+      
+      try {
+        const res = await fetch(`${API_URL}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password }),
+        });
+        const data = await res.json();
+        if (!res.ok) { showAlert(data.error || 'Registration failed'); return; }
+        
+        // Save user data locally for immediate UI use
+        localStorage.setItem('userProfile', JSON.stringify({ name: data.user.name, email: data.user.email, avatar: data.user.avatar || '' }));
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('walletBalance', data.user.balance?.toString() || '0');
+        localStorage.setItem('isLoggedIn', 'true');
+        
+        // Clear mock data
+        localStorage.setItem('myBookings', '[]');
+        localStorage.setItem('myTransactions', '[]');
+        localStorage.setItem('supportTickets', '[]');
+        localStorage.setItem('myNotifications', '[]');
+        
+      } catch (err) {
+        showAlert('Network error. Is backend running?');
+        return;
+      }
     } else {
       if (email === 'admin@tixindia.com' && password === 'admin123') {
         localStorage.setItem('isAdminLoggedIn', 'true');
         navigate('/admin');
         return;
       }
-      const user = registeredUsers.find((u: any) => u.email === email);
-      if (user && user.password !== password) { showAlert('Incorrect password.'); return; }
-      else if (!user && registeredUsers.length > 0) { showAlert('Account not found. Please register.'); return; }
-      if (user) {
-        try {
-          const profile = user.profile || { name: user.name || 'User', email: user.email, mobile: '', city: '' };
-          localStorage.setItem('userProfile', JSON.stringify(profile));
-          const restored = userFunds[user.email] || {};
-          localStorage.setItem('walletBalance', restored.balance || '0');
-          localStorage.setItem('myTransactions', restored.tx || '[]');
-          localStorage.setItem('myBookings', restored.bookings || '[]');
-          localStorage.setItem('supportTickets', restored.tickets || '[]');
-          localStorage.setItem('myNotifications', restored.notifications || '[]');
-          localStorage.setItem('myCoupons', restored.coupons || '[]');
-          if (restored.upiPin) {
-            localStorage.setItem('upiPin', restored.upiPin);
-          } else {
-            localStorage.removeItem('upiPin');
-          }
-        } catch (err: any) {
-          console.error('Storage full:', err);
-          showAlert('Storage limit reached! Some data might not load perfectly. Please clear browser cache.', 'error');
-          // Fallback to clear some space if needed, or just let them login with partial data.
-        }
+      
+      try {
+        const res = await fetch(`${API_URL}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json();
+        if (!res.ok) { showAlert(data.error || 'Login failed'); return; }
+
+        localStorage.setItem('userProfile', JSON.stringify({ name: data.user.name, email: data.user.email, avatar: data.user.avatar || '' }));
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('walletBalance', data.user.balance?.toString() || '0');
+        localStorage.setItem('isLoggedIn', 'true');
+        
+      } catch (err) {
+        showAlert('Network error. Is backend running?');
+        return;
       }
     }
-    localStorage.setItem('isLoggedIn', 'true');
+    
     window.dispatchEvent(new Event('storage'));
     showAlert(isLogin ? 'Welcome back!' : 'Account created!', 'success');
     setTimeout(() => navigate('/profile'), 800);

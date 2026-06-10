@@ -139,14 +139,43 @@ export default function Payment() {
       
       const savedBookings = JSON.parse(localStorage.getItem('myBookings') || '[]');
       const formattedDate = paymentData.date && paymentData.time ? `${new Date(paymentData.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at ${paymentData.time}` : "Nov 20, 2026";
+      
+      const seatsSummary = `${paymentData.blockName} - ${paymentData.seatCount} Seat(s)${appliedCoupon ? ' (Discount Applied)' : ''}`;
+      
       const newBooking = {
         event: paymentData.eventTitle,
         date: formattedDate,
         venue: paymentData.eventVenue,
-        seats: `${paymentData.blockName} - ${paymentData.seatCount} Seat(s)${appliedCoupon ? ' (Discount Applied)' : ''}`,
+        seats: seatsSummary,
         price: `₹${finalTotalAmount}`,
         status: "Confirmed"
       };
+
+      // ── API CALL TO BACKEND ──
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+          await fetch(`${API_URL}/api/bookings`, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}` 
+            },
+            body: JSON.stringify({
+              eventTitle: paymentData.eventTitle,
+              eventVenue: paymentData.eventVenue,
+              eventDate: formattedDate,
+              seatsSummary: seatsSummary,
+              totalAmount: finalTotalAmount
+            })
+          });
+        }
+      } catch (err) {
+        console.error("Failed to save booking to backend", err);
+      }
+      // ──────────────────────────
+
       const updatedBookings = [newBooking, ...savedBookings];
       localStorage.setItem('myBookings', JSON.stringify(updatedBookings));
 
