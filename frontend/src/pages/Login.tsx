@@ -241,11 +241,17 @@ export default function Login() {
           localStorage.removeItem('isAdminLoggedIn');
         }
         
-        // Clear mock data
-        localStorage.setItem('myBookings', '[]');
-        localStorage.setItem('myTransactions', '[]');
+        // Load user data from persistent registry if it exists
+        if (userFundsReg[data.user.email]) {
+          localStorage.setItem('myBookings', userFundsReg[data.user.email].bookings || '[]');
+          localStorage.setItem('myTransactions', userFundsReg[data.user.email].tx || '[]');
+          localStorage.setItem('myNotifications', userFundsReg[data.user.email].notifications || '[]');
+        } else {
+          localStorage.setItem('myBookings', '[]');
+          localStorage.setItem('myTransactions', '[]');
+          localStorage.setItem('myNotifications', '[]');
+        }
         localStorage.setItem('supportTickets', '[]');
-        localStorage.setItem('myNotifications', '[]');
         
       } catch (err) {
         showAlert('Network error. Is backend running?');
@@ -279,6 +285,18 @@ export default function Login() {
         } else {
           localStorage.removeItem('isAdminLoggedIn');
         }
+
+        // Sync user data on login
+        if (userFundsLog[data.user.email]) {
+          localStorage.setItem('myBookings', userFundsLog[data.user.email].bookings || '[]');
+          localStorage.setItem('myTransactions', userFundsLog[data.user.email].tx || '[]');
+          localStorage.setItem('myNotifications', userFundsLog[data.user.email].notifications || '[]');
+        } else {
+          localStorage.setItem('myBookings', '[]');
+          localStorage.setItem('myTransactions', '[]');
+          localStorage.setItem('myNotifications', '[]');
+        }
+        localStorage.setItem('supportTickets', '[]');
         
       } catch (err) {
         showAlert('Network error. Is backend running?');
