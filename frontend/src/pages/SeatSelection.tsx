@@ -137,6 +137,83 @@ export default function SeatSelection() {
     }
   };
 
+  const renderRealisticSeat = (
+    x: number,
+    y: number,
+    seatId: string,
+    isLocked: any,
+    isSelected: boolean,
+    rectW: number,
+    rectH: number
+  ) => {
+    let fillUrl = 'url(#seat-available)';
+    let borderStroke = 'rgba(255,255,255,0.15)';
+    
+    if (isLocked) {
+      fillUrl = 'url(#seat-locked)';
+      borderStroke = 'rgba(255,255,255,0.08)';
+    } else if (isSelected) {
+      fillUrl = 'url(#seat-selected)';
+      borderStroke = 'rgba(255,255,255,0.35)';
+    }
+
+    return (
+      <g 
+        key={seatId} 
+        onClick={() => !isLocked && toggleSeat(seatId)}
+        className={`transition-all duration-150 cursor-pointer group ${isLocked ? 'cursor-not-allowed opacity-35' : 'hover:scale-[1.8] hover:filter hover:drop-shadow-[0_0_6px_rgba(34,197,94,0.4)]'}`}
+        style={{ transformOrigin: `${x}px ${y}px` }}
+      >
+        {/* Metal bracket legs */}
+        <line x1={x - 2} y1={y + rectH/2} x2={x - 2} y2={y + rectH/2 + 2} stroke="#0f172a" strokeWidth="1" />
+        <line x1={x + 2} y1={y + rectH/2} x2={x + 2} y2={y + rectH/2 + 2} stroke="#0f172a" strokeWidth="1" />
+        <line x1={x - 3} y1={y + rectH/2 + 2} x2={x + 3} y2={y + rectH/2 + 2} stroke="#0f172a" strokeWidth="0.8" />
+
+        {/* Armrests */}
+        <rect x={x - rectW/2 - 1.2} y={y - rectH/2 + 1} width="1.0" height={rectH - 1} fill="#1e293b" rx="0.3" />
+        <rect x={x + rectW/2 + 0.2} y={y - rectH/2 + 1} width="1.0" height={rectH - 1} fill="#1e293b" rx="0.3" />
+
+        {/* Backrest with ergonomic ridges */}
+        <rect 
+          x={x - rectW/2} 
+          y={y - rectH/2 - 1} 
+          width={rectW} 
+          height={rectH/2 + 1} 
+          fill={fillUrl} 
+          rx="1.2" 
+          stroke={borderStroke} 
+          strokeWidth="0.5" 
+          style={{ filter: isSelected ? 'url(#glow-selected)' : 'none' }}
+        />
+        <line x1={x - rectW/4} y1={y - rectH/2} x2={x - rectW/4} y2={y} stroke="rgba(0,0,0,0.25)" strokeWidth="0.5" />
+        <line x1={x} y1={y - rectH/2} x2={x} y2={y} stroke="rgba(0,0,0,0.25)" strokeWidth="0.5" />
+        <line x1={x + rectW/4} y1={y - rectH/2} x2={x + rectW/4} y2={y} stroke="rgba(0,0,0,0.25)" strokeWidth="0.5" />
+
+        {/* Seat cushion pan */}
+        <rect 
+          x={x - rectW/2} 
+          y={y + 1} 
+          width={rectW} 
+          height={rectH/2 + 1} 
+          fill={fillUrl} 
+          rx="1.5" 
+          stroke={borderStroke} 
+          strokeWidth="0.5" 
+          style={{ filter: isSelected ? 'url(#glow-selected)' : 'none' }}
+        />
+        <path 
+          d={`M ${x - rectW/2 + 1.5} ${y + 2.5} Q ${x} ${y + 4.5} ${x + rectW/2 - 1.5} ${y + 2.5}`} 
+          fill="none" 
+          stroke="rgba(255,255,255,0.15)" 
+          strokeWidth="0.5" 
+        />
+
+        {/* Crease line */}
+        <line x1={x - rectW/2 + 1} y1={y + 0.5} x2={x + rectW/2 - 1} y2={y + 0.5} stroke="rgba(0,0,0,0.35)" strokeWidth="0.6" />
+      </g>
+    );
+  };
+
 
 
   // MACRO VIEWS
@@ -360,17 +437,17 @@ export default function SeatSelection() {
     const totalRows = activeLayout === 'narendra' ? 40 : activeLayout === 'eden' ? 30 : 22;
     const seats = [];
     const cx = 500;
-    const cy = 1300; // Pitch is way down at the bottom
-    const rIn = 650; // Front row radius (increased to not overlap pitch)
+    const cy = 1300; // Pitch center is far below
+    const rIn = 710; // Front row radius
     const rOut = 1200; // Back row radius
-    const baseAngleSpan = 50; // Spread of the wedge in degrees
+    const baseAngleSpan = 50;
 
     if (isStraight) {
       for (let rIdx = 0; rIdx < totalRows; rIdx++) {
         const seatsInThisRow = 20 + Math.floor((rIdx / totalRows) * 12);
         const seatWidth = 14;
         const rowHeight = 16;
-        const startY = 650;
+        const startY = 600; 
         
         const y = startY - rIdx * rowHeight;
         const startX = cx - ((seatsInThisRow - 1) * seatWidth) / 2;
@@ -382,29 +459,11 @@ export default function SeatSelection() {
           const isLocked = lockedSeats[seatId];
           const isSelected = selectedSeats.includes(seatId);
 
-          let fill = '#334155'; // default empty
-          if (isLocked) fill = '#ef4444'; // locked
-          if (isSelected) fill = '#22c55e'; // selected
-
-          const rectW = 8;
-          const rectH = 6;
-          const rx = 1.5;
+          const rectW = 10;
+          const rectH = 8;
 
           seats.push(
-            <g 
-              key={seatId} 
-              onClick={() => !isLocked && toggleSeat(seatId)}
-              className={`transition-all duration-100 cursor-pointer ${isLocked ? 'cursor-not-allowed opacity-50' : 'hover:scale-[2]'}`}
-              style={{ transformOrigin: `${x}px ${y}px` }}
-            >
-              <rect x={x - rectW/2} y={y - rectH/2} width={rectW} height={rectH} fill={fill} rx={rx} />
-              <path 
-                d={`M ${x - rectW/2} ${y + rectH/2} L ${x + rectW/2} ${y + rectH/2}`} 
-                stroke="rgba(255,255,255,0.5)" 
-                strokeWidth="1" 
-                opacity={isSelected ? 1 : 0} 
-              />
-            </g>
+            renderRealisticSeat(x, y, seatId, isLocked, isSelected, rectW, rectH)
           );
         }
       }
@@ -429,29 +488,11 @@ export default function SeatSelection() {
           const isLocked = lockedSeats[seatId];
           const isSelected = selectedSeats.includes(seatId);
 
-          let fill = '#334155'; // default empty
-          if (isLocked) fill = '#ef4444'; // locked
-          if (isSelected) fill = '#22c55e'; // selected
-
-          const rectW = isWankhede ? 10 : 6;
-          const rectH = isWankhede ? 8 : 4;
-          const rx = isWankhede ? 2 : 1;
+          const rectW = isWankhede ? 10 : 8;
+          const rectH = isWankhede ? 8 : 6;
 
           seats.push(
-            <g 
-              key={seatId} 
-              onClick={() => !isLocked && toggleSeat(seatId)}
-              className={`transition-all duration-100 cursor-pointer ${isLocked ? 'cursor-not-allowed opacity-50' : 'hover:scale-[2]'}`}
-              style={{ transformOrigin: `${x}px ${y}px` }}
-            >
-              <rect x={x - rectW/2} y={y - rectH/2} width={rectW} height={rectH} fill={fill} rx={rx} />
-              <path 
-                d={`M ${x - rectW/2} ${y + rectH/2} L ${x + rectW/2} ${y + rectH/2}`} 
-                stroke="rgba(255,255,255,0.5)" 
-                strokeWidth="1" 
-                opacity={isSelected ? 1 : 0} 
-              />
-            </g>
+            renderRealisticSeat(x, y, seatId, isLocked, isSelected, rectW, rectH)
           );
         }
       }
@@ -477,63 +518,174 @@ export default function SeatSelection() {
           <div className="w-full max-w-[750px] max-h-[750px] aspect-square relative">
             <svg 
               viewBox="-150 -150 1300 1300" 
-              className="w-full h-full drop-shadow-2xl transition-all duration-[1500ms] ease-in-out"
-              style={{ transform: `rotate(${selectedBlockAngle}deg)` }}
+              className="w-full h-full drop-shadow-2xl"
             >
-              {isFootball ? (
-                // Football Pitch
-                <g transform={`rotate(${-selectedBlockAngle} 500 800)`}>
-                  {/* Pitch Green base */}
-                  <rect x="300" y="750" width="400" height="150" fill="#16a34a" stroke="#bef264" strokeWidth="2" opacity="0.3" rx="8" />
-                  {/* Markings */}
-                  <rect x="310" y="760" width="380" height="130" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />
-                  {/* Halfway line */}
-                  <line x1="500" y1="760" x2="500" y2="890" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />
-                  {/* Center circle */}
-                  <circle cx="500" cy="825" r="30" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />
-                  {/* Penalty Box Left */}
-                  <rect x="310" y="795" width="50" height="60" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />
-                  {/* Penalty Box Right */}
-                  <rect x="640" y="795" width="50" height="60" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />
-                  {/* Goalposts */}
-                  <rect x="298" y="810" width="12" height="30" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2" />
-                  <rect x="690" y="810" width="12" height="30" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2" />
-                  <text 
-                    x="500" y="725" 
-                    fill="#4ade80" 
-                    fontSize="20" 
-                    fontWeight="extrabold" 
-                    textAnchor="middle" 
-                    opacity="0.8" 
-                    className="tracking-[0.5em]"
-                  >
-                    FOOTBALL PITCH
-                  </text>
-                </g>
-              ) : (
-                // Cricket Pitch
-                <g transform={`rotate(${-selectedBlockAngle} 500 800)`}>
-                  {/* Oval outfield boundary */}
-                  <ellipse cx="500" cy="800" rx="280" ry="110" fill="#16a34a" stroke="#bef264" strokeWidth="2" opacity="0.2" />
-                  {/* Pitch Wicket Strip */}
-                  <rect x="490" y="770" width="20" height="60" fill="#fef08a" stroke="#ca8a04" strokeWidth="1.5" opacity="0.8" rx="2" />
-                  <line x1="490" y1="785" x2="510" y2="785" stroke="rgba(0,0,0,0.3)" strokeWidth="1" />
-                  <line x1="490" y1="815" x2="510" y2="815" stroke="rgba(0,0,0,0.3)" strokeWidth="1" />
-                  <text 
-                    x="500" y="670" 
-                    fill="#4ade80" 
-                    fontSize="20" 
-                    fontWeight="extrabold" 
-                    textAnchor="middle" 
-                    opacity="0.8" 
-                    className="tracking-[0.5em]"
-                  >
-                    CRICKET FIELD
-                  </text>
-                </g>
-              )}
-              
-              {seats}
+              <defs>
+                {/* Glow Filter */}
+                <filter id="glow-selected" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="3" result="blur" />
+                  <feComponentTransfer in="blur" result="glow">
+                    <feFuncA type="linear" slope="0.8"/>
+                  </feComponentTransfer>
+                  <feMerge>
+                    <feMergeNode in="glow" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+
+                {/* Seat Color Gradients */}
+                <linearGradient id="seat-available" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#475569" />
+                  <stop offset="60%" stopColor="#334155" />
+                  <stop offset="100%" stopColor="#1e293b" />
+                </linearGradient>
+                <linearGradient id="seat-selected" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#34d399" />
+                  <stop offset="60%" stopColor="#10b981" />
+                  <stop offset="100%" stopColor="#047857" />
+                </linearGradient>
+                <linearGradient id="seat-locked" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#f87171" />
+                  <stop offset="60%" stopColor="#ef4444" />
+                  <stop offset="100%" stopColor="#991b1b" />
+                </linearGradient>
+
+                {/* Football Pitch Gradients */}
+                <linearGradient id="grass-dark" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#115e59" />
+                  <stop offset="100%" stopColor="#134e4a" />
+                </linearGradient>
+                <linearGradient id="grass-light" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#14b8a6" />
+                  <stop offset="100%" stopColor="#0d9488" />
+                </linearGradient>
+                <radialGradient id="pitch-center-glow" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="rgba(255, 255, 255, 0.12)" />
+                  <stop offset="100%" stopColor="rgba(0, 0, 0, 0)" />
+                </radialGradient>
+
+                {/* Floodlight Beam Radial Gradients */}
+                <radialGradient id="light-top-left" cx="0%" cy="0%" r="100%">
+                  <stop offset="0%" stopColor="rgba(255, 255, 255, 0.2)" />
+                  <stop offset="50%" stopColor="rgba(255, 255, 255, 0.05)" />
+                  <stop offset="100%" stopColor="rgba(0, 0, 0, 0)" />
+                </radialGradient>
+                <radialGradient id="light-top-right" cx="100%" cy="0%" r="100%">
+                  <stop offset="0%" stopColor="rgba(255, 255, 255, 0.2)" />
+                  <stop offset="50%" stopColor="rgba(255, 255, 255, 0.05)" />
+                  <stop offset="100%" stopColor="rgba(0, 0, 0, 0)" />
+                </radialGradient>
+                <radialGradient id="light-bottom-left" cx="0%" cy="100%" r="100%">
+                  <stop offset="0%" stopColor="rgba(255, 255, 255, 0.2)" />
+                  <stop offset="50%" stopColor="rgba(255, 255, 255, 0.05)" />
+                  <stop offset="100%" stopColor="rgba(0, 0, 0, 0)" />
+                </radialGradient>
+                <radialGradient id="light-bottom-right" cx="100%" cy="100%" r="100%">
+                  <stop offset="0%" stopColor="rgba(255, 255, 255, 0.2)" />
+                  <stop offset="50%" stopColor="rgba(255, 255, 255, 0.05)" />
+                  <stop offset="100%" stopColor="rgba(0, 0, 0, 0)" />
+                </radialGradient>
+              </defs>
+
+              {/* Corner Ambient Floodlights */}
+              <circle cx="-150" cy="-150" r="450" fill="url(#light-top-left)" pointerEvents="none" />
+              <circle cx="1150" cy="-150" r="450" fill="url(#light-top-right)" pointerEvents="none" />
+              <circle cx="-150" cy="1150" r="450" fill="url(#light-bottom-left)" pointerEvents="none" />
+              <circle cx="1150" cy="1150" r="450" fill="url(#light-bottom-right)" pointerEvents="none" />
+
+              {/* Smooth rotating container centered exactly on pitch center (500, 800) */}
+              <g 
+                transform={`rotate(${selectedBlockAngle} 500 800)`}
+                className="transition-all duration-[1200ms] ease-in-out"
+                style={{ transformOrigin: '500px 800px' }}
+              >
+                {isFootball ? (
+                  // Football Pitch
+                  <g transform={`rotate(${-selectedBlockAngle} 500 800)`}>
+                    {/* Turf Base */}
+                    <rect x="300" y="750" width="400" height="150" fill="#065f46" rx="8" />
+                    {/* Grass stripes */}
+                    <rect x="300" y="750" width="40" height="150" fill="url(#grass-dark)" opacity="0.4" />
+                    <rect x="340" y="750" width="40" height="150" fill="url(#grass-light)" opacity="0.4" />
+                    <rect x="380" y="750" width="40" height="150" fill="url(#grass-dark)" opacity="0.4" />
+                    <rect x="420" y="750" width="40" height="150" fill="url(#grass-light)" opacity="0.4" />
+                    <rect x="460" y="750" width="40" height="150" fill="url(#grass-dark)" opacity="0.4" />
+                    <rect x="500" y="750" width="40" height="150" fill="url(#grass-light)" opacity="0.4" />
+                    <rect x="540" y="750" width="40" height="150" fill="url(#grass-dark)" opacity="0.4" />
+                    <rect x="580" y="750" width="40" height="150" fill="url(#grass-light)" opacity="0.4" />
+                    <rect x="620" y="750" width="40" height="150" fill="url(#grass-dark)" opacity="0.4" />
+                    <rect x="660" y="750" width="40" height="150" fill="url(#grass-light)" opacity="0.4" />
+
+                    {/* Pitch boundaries & chalk markings */}
+                    <rect x="310" y="760" width="380" height="130" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" />
+                    <line x1="500" y1="760" x2="500" y2="890" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" />
+                    <circle cx="500" cy="825" r="25" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" />
+                    <circle cx="500" cy="825" r="2" fill="rgba(255,255,255,0.9)" />
+                    
+                    {/* Penalty areas */}
+                    <rect x="310" y="792" width="45" height="66" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" />
+                    <rect x="310" y="807" width="15" height="36" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" />
+                    <circle cx="340" cy="825" r="1.5" fill="#ffffff" />
+                    <path d="M 355 813 A 25 25 0 0 1 355 837" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" />
+
+                    <rect x="645" y="792" width="45" height="66" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" />
+                    <rect x="675" y="807" width="15" height="36" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" />
+                    <circle cx="660" cy="825" r="1.5" fill="#ffffff" />
+                    <path d="M 645 813 A 25 25 0 0 0 645 837" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" />
+
+                    {/* Corner Arcs */}
+                    <path d="M 310 765 A 5 5 0 0 1 315 760" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="1" />
+                    <path d="M 315 890 A 5 5 0 0 1 310 885" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="1" />
+                    <path d="M 685 760 A 5 5 0 0 1 690 765" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="1" />
+                    <path d="M 690 885 A 5 5 0 0 1 685 890" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="1" />
+
+                    {/* Goalposts & Nets */}
+                    <polygon points="295,807 310,810 310,840 295,843" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.4)" strokeWidth="0.8" />
+                    <path d="M 295 807 L 310 810 M 295 843 L 310 840 M 295 807 L 295 843" stroke="#ffffff" strokeWidth="1.5" fill="none" />
+                    
+                    <polygon points="705,807 690,810 690,840 705,843" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.4)" strokeWidth="0.8" />
+                    <path d="M 705 807 L 690 810 M 705 843 L 690 840 M 705 807 L 705 843" stroke="#ffffff" strokeWidth="1.5" fill="none" />
+
+                    <rect x="300" y="750" width="400" height="150" fill="url(#pitch-center-glow)" pointerEvents="none" />
+                  </g>
+                ) : (
+                  // Cricket Pitch
+                  <g transform={`rotate(${-selectedBlockAngle} 500 800)`}>
+                    {/* Outfield concentric grass cutting */}
+                    <ellipse cx="500" cy="800" rx="280" ry="110" fill="#1b5e20" stroke="#2e7d32" strokeWidth="1.5" />
+                    <ellipse cx="500" cy="800" rx="242" ry="95" fill="#2e7d32" opacity="0.95" />
+                    <ellipse cx="500" cy="800" rx="204" ry="80" fill="#388e3c" opacity="0.95" />
+                    <ellipse cx="500" cy="800" rx="166" ry="65" fill="#4caf50" opacity="0.95" />
+                    <ellipse cx="500" cy="800" rx="128" ry="50" fill="#81c784" opacity="0.85" />
+
+                    {/* 30-Yard Circle */}
+                    <ellipse cx="500" cy="800" rx="140" ry="55" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeDasharray="4,4" />
+
+                    {/* Boundary Rope */}
+                    <ellipse cx="500" cy="800" rx="276" ry="108" fill="none" stroke="#f1f5f9" strokeWidth="2.5" opacity="0.95" />
+
+                    {/* Wicket Pitch Strip */}
+                    <rect x="488" y="775" width="24" height="50" fill="#d7ccc8" stroke="#8d6e63" strokeWidth="1.5" rx="1" />
+                    <line x1="488" y1="782" x2="512" y2="782" stroke="#ffffff" strokeWidth="1" />
+                    <line x1="484" y1="785" x2="516" y2="785" stroke="#ffffff" strokeWidth="1" />
+                    <line x1="488" y1="818" x2="512" y2="818" stroke="#ffffff" strokeWidth="1" />
+                    <line x1="484" y1="815" x2="516" y2="815" stroke="#ffffff" strokeWidth="1" />
+
+                    {/* Wickets (Stumps & Bails) */}
+                    <line x1="496" y1="781" x2="496" y2="782" stroke="#d7a15c" strokeWidth="1.5" />
+                    <line x1="500" y1="781" x2="500" y2="782" stroke="#d7a15c" strokeWidth="1.5" />
+                    <line x1="504" y1="781" x2="504" y2="782" stroke="#d7a15c" strokeWidth="1.5" />
+                    <line x1="495" y1="781" x2="505" y2="781" stroke="#d7a15c" strokeWidth="1" />
+
+                    <line x1="496" y1="818" x2="496" y2="819" stroke="#d7a15c" strokeWidth="1.5" />
+                    <line x1="500" y1="818" x2="500" y2="819" stroke="#d7a15c" strokeWidth="1.5" />
+                    <line x1="504" y1="818" x2="504" y2="819" stroke="#d7a15c" strokeWidth="1.5" />
+                    <line x1="495" y1="819" x2="505" y2="819" stroke="#d7a15c" strokeWidth="1" />
+                  </g>
+                )}
+                
+                {seats}
+              </g>
             </svg>
           </div>
         </div>
