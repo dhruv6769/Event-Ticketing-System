@@ -595,13 +595,23 @@ export default function SeatSelection() {
 
               {/* Smooth rotating container centered exactly on pitch center (500, 800) */}
               <g 
-                transform={`rotate(${selectedBlockAngle} 500 800)`}
-                className="transition-all duration-[1200ms] ease-in-out"
-                style={{ transformOrigin: '500px 800px' }}
+                style={{ 
+                  transform: `rotate(${selectedBlockAngle}deg)`,
+                  transformOrigin: '500px 800px',
+                  transformBox: 'view-box',
+                  transition: 'transform 1200ms ease-in-out'
+                }}
               >
                 {isFootball ? (
                   // Football Pitch
-                  <g transform={`rotate(${-selectedBlockAngle} 500 800)`}>
+                  <g 
+                    style={{ 
+                      transform: `rotate(${-selectedBlockAngle}deg)`,
+                      transformOrigin: '500px 800px',
+                      transformBox: 'view-box',
+                      transition: 'transform 1200ms ease-in-out'
+                    }}
+                  >
                     {/* Turf Base */}
                     <rect x="300" y="750" width="400" height="150" fill="#065f46" rx="8" />
                     {/* Grass stripes */}
@@ -650,7 +660,14 @@ export default function SeatSelection() {
                   </g>
                 ) : (
                   // Cricket Pitch
-                  <g transform={`rotate(${-selectedBlockAngle} 500 800)`}>
+                  <g 
+                    style={{ 
+                      transform: `rotate(${-selectedBlockAngle}deg)`,
+                      transformOrigin: '500px 800px',
+                      transformBox: 'view-box',
+                      transition: 'transform 1200ms ease-in-out'
+                    }}
+                  >
                     {/* Outfield concentric grass cutting */}
                     <ellipse cx="500" cy="800" rx="280" ry="110" fill="#1b5e20" stroke="#2e7d32" strokeWidth="1.5" />
                     <ellipse cx="500" cy="800" rx="242" ry="95" fill="#2e7d32" opacity="0.95" />
