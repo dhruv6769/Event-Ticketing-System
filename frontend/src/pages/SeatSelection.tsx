@@ -12,31 +12,9 @@ import JawaharlalNehruKochiStadium from '../components/JawaharlalNehruKochiStadi
 import MovieTheaterLayout from '../components/MovieTheaterLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageWrapper from '../components/PageWrapper';
+import { MOCK_EVENTS } from '../data/mockData';
 
 type LayoutType = 'narendra' | 'wankhede' | 'eden' | 'chinnaswamy' | 'velodrome' | 'theatre' | 'chepauk' | 'saltlake' | 'kochi';
-
-const MOCK_EVENTS = [
-  // Concerts
-  { id: 1, title: "Coldplay: Music of the Spheres", category: "Concert", venue: "Narendra Modi Stadium", date: "Nov 20, 2026", price: "₹6000", image: "/coldplay.png", badge: "Selling Fast" },
-  { id: 2, title: "Arijit Singh Live", category: "Concert", venue: "Wankhede Stadium", date: "Dec 31, 2026", price: "₹3500", image: "/arijit.png", badge: "Almost Full" },
-  { id: 3, title: "Diljit Dosanjh: Dil-Luminati", category: "Concert", venue: "Eden Gardens", date: "Oct 15, 2026", price: "₹4500", image: "/diljit.png", badge: "Selling Fast" },
-  { id: 4, title: "Dua Lipa: Radical Optimism", category: "Concert", venue: "M. Chinnaswamy Stadium", date: "Jan 10, 2027", price: "₹5500", image: "/dua.png", badge: "Available" },
-  { id: 5, title: "Ed Sheeran: Mathematics Tour", category: "Concert", venue: "Jio World Convention Centre", date: "Feb 14, 2027", price: "₹7000", image: "/edsheeran.png", badge: "Almost Full" },
-  
-  // Sports
-  { id: 6, title: "India vs Australia Test Match", category: "Sports", venue: "Eden Gardens", date: "Jan 05, 2027", price: "₹1200", image: "/ind-aus.png", badge: "Available" },
-  { id: 7, title: "IPL Final: CSK vs MI", category: "Sports", venue: "Narendra Modi Stadium", date: "May 28, 2027", price: "₹2500", image: "/csk-mi.png", badge: "Selling Fast" },
-  { id: 8, title: "RCB vs KKR", category: "Sports", venue: "M. Chinnaswamy Stadium", date: "April 15, 2027", price: "₹1800", image: "/rcb-kkr.png", badge: "Selling Fast" },
-  { id: 9, title: "Mumbai Indians vs Delhi Capitals", category: "Sports", venue: "Wankhede Stadium", date: "April 22, 2027", price: "₹1500", image: "/dc-mi.png", badge: "Available" },
-  { id: 10, title: "Pro Kabaddi League Finals", category: "Sports", venue: "Indira Gandhi Arena", date: "Nov 30, 2026", price: "₹800", image: "/pkl.png", badge: "Available" },
-
-  // Movies
-  { id: 11, title: "Kalki 2898 AD", category: "Movie", venue: "PVR Director's Cut", date: "Daily", price: "₹450", image: "/kalki.png", badge: "Selling Fast" },
-  { id: 12, title: "Deadpool & Wolverine", category: "Movie", venue: "PVR Icon", date: "Daily", price: "₹350", image: "/deadpool.png", badge: "Available" },
-  { id: 13, title: "Pushpa 2: The Rule", category: "Movie", venue: "PVR Director's Cut", date: "Aug 15, 2026", price: "₹500", image: "/pushpa.png", badge: "Almost Full" },
-  { id: 14, title: "Dune: Part Two IMAX", category: "Movie", venue: "PVR Icon", date: "Daily", price: "₹600", image: "/dune.png", badge: "Available" },
-  { id: 15, title: "Oppenheimer Re-release", category: "Movie", venue: "PVR Director's Cut", date: "Daily", price: "₹400", image: "/oppenheimer.png", badge: "Available" }
-];
 
 export default function SeatSelection() {
   const { eventId } = useParams();
