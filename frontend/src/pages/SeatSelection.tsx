@@ -355,6 +355,8 @@ export default function SeatSelection() {
     }
 
     const isWankhede = activeLayout === 'wankhede';
+    const isFootball = activeLayout === 'saltlake' || activeLayout === 'kochi';
+    const isStraight = isFootball;
     const totalRows = activeLayout === 'narendra' ? 40 : activeLayout === 'eden' ? 30 : 22;
     const seats = [];
     const cx = 500;
@@ -363,52 +365,95 @@ export default function SeatSelection() {
     const rOut = 1200; // Back row radius
     const baseAngleSpan = 50; // Spread of the wedge in degrees
 
-    for (let rIdx = 0; rIdx < totalRows; rIdx++) {
-      const rowRadius = rIn + (rIdx / (totalRows - 1)) * (rOut - rIn);
-      // Wankhede has fewer seats per row
-      const seatsInThisRow = isWankhede 
-        ? 15 + Math.floor((rIdx / totalRows) * 30) 
-        : 30 + Math.floor((rIdx / totalRows) * 60); 
-      
-      const angleStep = baseAngleSpan / (seatsInThisRow - 1);
-      const startAngle = 270 - (baseAngleSpan / 2);
-
-      for (let sIdx = 0; sIdx < seatsInThisRow; sIdx++) {
-        const angleDeg = startAngle + sIdx * angleStep;
-        const angleRad = angleDeg * (Math.PI / 180);
+    if (isStraight) {
+      for (let rIdx = 0; rIdx < totalRows; rIdx++) {
+        const seatsInThisRow = 20 + Math.floor((rIdx / totalRows) * 12);
+        const seatWidth = 14;
+        const rowHeight = 16;
+        const startY = 650;
         
-        const x = cx + rowRadius * Math.cos(angleRad);
-        const y = cy + rowRadius * Math.sin(angleRad);
+        const y = startY - rIdx * rowHeight;
+        const startX = cx - ((seatsInThisRow - 1) * seatWidth) / 2;
+
+        for (let sIdx = 0; sIdx < seatsInThisRow; sIdx++) {
+          const x = startX + sIdx * seatWidth;
+          
+          const seatId = `${String.fromCharCode(65 + Math.floor(rIdx/2))}${sIdx + 1}-${rIdx}`;
+          const isLocked = lockedSeats[seatId];
+          const isSelected = selectedSeats.includes(seatId);
+
+          let fill = '#334155'; // default empty
+          if (isLocked) fill = '#ef4444'; // locked
+          if (isSelected) fill = '#22c55e'; // selected
+
+          const rectW = 8;
+          const rectH = 6;
+          const rx = 1.5;
+
+          seats.push(
+            <g 
+              key={seatId} 
+              onClick={() => !isLocked && toggleSeat(seatId)}
+              className={`transition-all duration-100 cursor-pointer ${isLocked ? 'cursor-not-allowed opacity-50' : 'hover:scale-[2]'}`}
+              style={{ transformOrigin: `${x}px ${y}px` }}
+            >
+              <rect x={x - rectW/2} y={y - rectH/2} width={rectW} height={rectH} fill={fill} rx={rx} />
+              <path 
+                d={`M ${x - rectW/2} ${y + rectH/2} L ${x + rectW/2} ${y + rectH/2}`} 
+                stroke="rgba(255,255,255,0.5)" 
+                strokeWidth="1" 
+                opacity={isSelected ? 1 : 0} 
+              />
+            </g>
+          );
+        }
+      }
+    } else {
+      for (let rIdx = 0; rIdx < totalRows; rIdx++) {
+        const rowRadius = rIn + (rIdx / (totalRows - 1)) * (rOut - rIn);
+        const seatsInThisRow = isWankhede 
+          ? 15 + Math.floor((rIdx / totalRows) * 30) 
+          : 30 + Math.floor((rIdx / totalRows) * 60); 
         
-        const seatId = `${String.fromCharCode(65 + Math.floor(rIdx/2))}${sIdx + 1}-${rIdx}`;
-        const isLocked = lockedSeats[seatId];
-        const isSelected = selectedSeats.includes(seatId);
+        const angleStep = baseAngleSpan / (seatsInThisRow - 1);
+        const startAngle = 270 - (baseAngleSpan / 2);
 
-        let fill = '#334155'; // default empty
-        if (isLocked) fill = '#ef4444'; // locked
-        if (isSelected) fill = '#22c55e'; // selected
+        for (let sIdx = 0; sIdx < seatsInThisRow; sIdx++) {
+          const angleDeg = startAngle + sIdx * angleStep;
+          const angleRad = angleDeg * (Math.PI / 180);
+          
+          const x = cx + rowRadius * Math.cos(angleRad);
+          const y = cy + rowRadius * Math.sin(angleRad);
+          
+          const seatId = `${String.fromCharCode(65 + Math.floor(rIdx/2))}${sIdx + 1}-${rIdx}`;
+          const isLocked = lockedSeats[seatId];
+          const isSelected = selectedSeats.includes(seatId);
 
-        // Make seats physically larger in Wankhede since there are fewer of them
-        const rectW = isWankhede ? 10 : 6;
-        const rectH = isWankhede ? 8 : 4;
-        const rx = isWankhede ? 2 : 1;
+          let fill = '#334155'; // default empty
+          if (isLocked) fill = '#ef4444'; // locked
+          if (isSelected) fill = '#22c55e'; // selected
 
-        seats.push(
-          <g 
-            key={seatId} 
-            onClick={() => !isLocked && toggleSeat(seatId)}
-            className={`transition-all duration-100 cursor-pointer ${isLocked ? 'cursor-not-allowed opacity-50' : 'hover:scale-[2]'}`}
-            style={{ transformOrigin: `${x}px ${y}px` }}
-          >
-            <rect x={x - rectW/2} y={y - rectH/2} width={rectW} height={rectH} fill={fill} rx={rx} />
-            <path 
-              d={`M ${x - rectW/2} ${y + rectH/2} L ${x + rectW/2} ${y + rectH/2}`} 
-              stroke="rgba(255,255,255,0.5)" 
-              strokeWidth="1" 
-              opacity={isSelected ? 1 : 0} 
-            />
-          </g>
-        );
+          const rectW = isWankhede ? 10 : 6;
+          const rectH = isWankhede ? 8 : 4;
+          const rx = isWankhede ? 2 : 1;
+
+          seats.push(
+            <g 
+              key={seatId} 
+              onClick={() => !isLocked && toggleSeat(seatId)}
+              className={`transition-all duration-100 cursor-pointer ${isLocked ? 'cursor-not-allowed opacity-50' : 'hover:scale-[2]'}`}
+              style={{ transformOrigin: `${x}px ${y}px` }}
+            >
+              <rect x={x - rectW/2} y={y - rectH/2} width={rectW} height={rectH} fill={fill} rx={rx} />
+              <path 
+                d={`M ${x - rectW/2} ${y + rectH/2} L ${x + rectW/2} ${y + rectH/2}`} 
+                stroke="rgba(255,255,255,0.5)" 
+                strokeWidth="1" 
+                opacity={isSelected ? 1 : 0} 
+              />
+            </g>
+          );
+        }
       }
     }
 
@@ -435,19 +480,58 @@ export default function SeatSelection() {
               className="w-full h-full drop-shadow-2xl transition-all duration-[1500ms] ease-in-out"
               style={{ transform: `rotate(${selectedBlockAngle}deg)` }}
             >
-              <ellipse cx="500" cy="800" rx="200" ry="80" fill="#4ade80" opacity="0.1" />
-              <text 
-                x="500" y="780" 
-                fill="#4ade80" 
-                fontSize="24" 
-                fontWeight="bold" 
-                textAnchor="middle" 
-                opacity="0.5" 
-                className="tracking-[1em]"
-                transform={`rotate(${-selectedBlockAngle} 500 780)`}
-              >
-                PITCH
-              </text>
+              {isFootball ? (
+                // Football Pitch
+                <g transform={`rotate(${-selectedBlockAngle} 500 800)`}>
+                  {/* Pitch Green base */}
+                  <rect x="300" y="750" width="400" height="150" fill="#16a34a" stroke="#bef264" strokeWidth="2" opacity="0.3" rx="8" />
+                  {/* Markings */}
+                  <rect x="310" y="760" width="380" height="130" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />
+                  {/* Halfway line */}
+                  <line x1="500" y1="760" x2="500" y2="890" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />
+                  {/* Center circle */}
+                  <circle cx="500" cy="825" r="30" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />
+                  {/* Penalty Box Left */}
+                  <rect x="310" y="795" width="50" height="60" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />
+                  {/* Penalty Box Right */}
+                  <rect x="640" y="795" width="50" height="60" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />
+                  {/* Goalposts */}
+                  <rect x="298" y="810" width="12" height="30" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2" />
+                  <rect x="690" y="810" width="12" height="30" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2" />
+                  <text 
+                    x="500" y="725" 
+                    fill="#4ade80" 
+                    fontSize="20" 
+                    fontWeight="extrabold" 
+                    textAnchor="middle" 
+                    opacity="0.8" 
+                    className="tracking-[0.5em]"
+                  >
+                    FOOTBALL PITCH
+                  </text>
+                </g>
+              ) : (
+                // Cricket Pitch
+                <g transform={`rotate(${-selectedBlockAngle} 500 800)`}>
+                  {/* Oval outfield boundary */}
+                  <ellipse cx="500" cy="800" rx="280" ry="110" fill="#16a34a" stroke="#bef264" strokeWidth="2" opacity="0.2" />
+                  {/* Pitch Wicket Strip */}
+                  <rect x="490" y="770" width="20" height="60" fill="#fef08a" stroke="#ca8a04" strokeWidth="1.5" opacity="0.8" rx="2" />
+                  <line x1="490" y1="785" x2="510" y2="785" stroke="rgba(0,0,0,0.3)" strokeWidth="1" />
+                  <line x1="490" y1="815" x2="510" y2="815" stroke="rgba(0,0,0,0.3)" strokeWidth="1" />
+                  <text 
+                    x="500" y="670" 
+                    fill="#4ade80" 
+                    fontSize="20" 
+                    fontWeight="extrabold" 
+                    textAnchor="middle" 
+                    opacity="0.8" 
+                    className="tracking-[0.5em]"
+                  >
+                    CRICKET FIELD
+                  </text>
+                </g>
+              )}
               
               {seats}
             </svg>
