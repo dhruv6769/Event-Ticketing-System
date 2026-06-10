@@ -117,29 +117,49 @@ export default function Admin() {
     setSupportTickets(JSON.parse(localStorage.getItem('supportTickets') || '[]'));
     setFundRequests(JSON.parse(localStorage.getItem('fundRequests') || '[]'));
 
-    // Calculate metrics
-    const usersData = JSON.parse(localStorage.getItem('userDataMap') || '{}');
-    let totalRev = 0;
-    let totalTix = 0;
-    Object.values(usersData).forEach((u: any) => {
-      if (u.tx) {
-        const txs = JSON.parse(u.tx);
-        txs.forEach((t: any) => {
-          if (t.type === 'debit') {
-            const amt = parseInt(t.amount.replace(/[^0-9]/g, ''), 10);
-            if (!isNaN(amt)) totalRev += amt;
-          }
+    // Fetch metrics dynamically from the backend
+    const fetchMetrics = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/admin/dashboard-metrics`, {
+          headers: { 'Authorization': `Bearer ${token}` }
         });
+        if (res.ok) {
+          const data = await res.json();
+          setDashboardMetrics({ revenue: data.revenue, ticketsSold: data.ticketsSold });
+        } else {
+          calculateFallbackMetrics();
+        }
+      } catch (err) {
+        calculateFallbackMetrics();
       }
-      if (u.bookings) {
-        const bkgs = JSON.parse(u.bookings);
-        bkgs.forEach((b: any) => {
-          const match = b.seats?.match(/- (\d+) Seat/);
-          if (match && match[1]) totalTix += parseInt(match[1], 10);
-        });
-      }
-    });
-    setDashboardMetrics({ revenue: totalRev, ticketsSold: totalTix });
+    };
+
+    const calculateFallbackMetrics = () => {
+      const usersData = JSON.parse(localStorage.getItem('userDataMap') || '{}');
+      let totalRev = 0;
+      let totalTix = 0;
+      Object.values(usersData).forEach((u: any) => {
+        if (u.tx) {
+          const txs = JSON.parse(u.tx);
+          txs.forEach((t: any) => {
+            if (t.type === 'debit') {
+              const amt = parseInt(t.amount.replace(/[^0-9]/g, ''), 10);
+              if (!isNaN(amt)) totalRev += amt;
+            }
+          });
+        }
+        if (u.bookings) {
+          const bkgs = JSON.parse(u.bookings);
+          bkgs.forEach((b: any) => {
+            const match = b.seats?.match(/- (\d+) Seat/);
+            if (match && match[1]) totalTix += parseInt(match[1], 10);
+          });
+        }
+      });
+      setDashboardMetrics({ revenue: totalRev, ticketsSold: totalTix });
+    };
+
+    fetchMetrics();
 
     const allVenues = [
       'Narendra Modi Stadium',

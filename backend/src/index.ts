@@ -129,6 +129,43 @@ app.post("/api/bookings", authenticateToken, async (req: any, res: any) => {
 });
 
 // ==========================================
+// ADMIN DASHBOARD METRICS ROUTES
+// ==========================================
+
+app.get("/api/admin/dashboard-metrics", authenticateToken, async (req: any, res: any) => {
+  try {
+    const requester = await prisma.user.findUnique({ where: { id: req.user.userId } });
+    if (!requester || requester.role !== "ADMIN") {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    
+    const bookings = await prisma.booking.findMany({});
+    
+    let totalRevenue = 0;
+    let totalTicketsSold = 0;
+    
+    bookings.forEach((b) => {
+      totalRevenue += b.total_amount;
+      
+      const match = b.seats_summary?.match(/- (\d+)\s+Seat/i);
+      if (match && match[1]) {
+        totalTicketsSold += parseInt(match[1], 10);
+      } else {
+        totalTicketsSold += 1;
+      }
+    });
+    
+    res.json({
+      revenue: totalRevenue,
+      ticketsSold: totalTicketsSold
+    });
+  } catch (error) {
+    console.error("Dashboard metrics error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ==========================================
 // ADMIN USER MANAGEMENT ROUTES
 // ==========================================
 
