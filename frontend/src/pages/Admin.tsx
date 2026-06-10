@@ -93,7 +93,27 @@ export default function Admin() {
     setIsAdminLoggedIn(true);
     setPendingUpdate(JSON.parse(localStorage.getItem('pendingProfileUpdate') || 'null'));
     setUserProfile(JSON.parse(localStorage.getItem('userProfile') || 'null'));
-    setAllUsers(JSON.parse(localStorage.getItem('registeredUsers') || '[]'));
+    
+    // Fetch users dynamically from the backend
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+    const token = localStorage.getItem('token');
+    const fetchUsers = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/admin/users`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setAllUsers(data);
+        } else {
+          setAllUsers(JSON.parse(localStorage.getItem('registeredUsers') || '[]'));
+        }
+      } catch (err) {
+        setAllUsers(JSON.parse(localStorage.getItem('registeredUsers') || '[]'));
+      }
+    };
+    fetchUsers();
+
     setSupportTickets(JSON.parse(localStorage.getItem('supportTickets') || '[]'));
     setFundRequests(JSON.parse(localStorage.getItem('fundRequests') || '[]'));
 
@@ -161,26 +181,44 @@ export default function Admin() {
     navigate('/login');
   };
 
-  const handleRemoveUser = (email: string) => {
+  const handleRemoveUser = async (email: string) => {
     if (!window.confirm(`Are you sure you want to completely remove user ${email}?`)) return;
     
-    const updatedUsers = allUsers.filter(u => u.email !== email);
-    setAllUsers(updatedUsers);
-    localStorage.setItem('registeredUsers', JSON.stringify(updatedUsers));
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+    const token = localStorage.getItem('token');
     
-    const userDataMap = JSON.parse(localStorage.getItem('userDataMap') || '{}');
-    if (userDataMap[email]) {
-      delete userDataMap[email];
-      localStorage.setItem('userDataMap', JSON.stringify(userDataMap));
+    try {
+      const res = await fetch(`${API_URL}/api/admin/users/${email}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (!res.ok) {
+        const data = await res.json();
+        showAlert('Error', data.error || 'Failed to delete user', 'error');
+        return;
+      }
+      
+      const updatedUsers = allUsers.filter(u => u.email !== email);
+      setAllUsers(updatedUsers);
+      localStorage.setItem('registeredUsers', JSON.stringify(updatedUsers));
+      
+      const userDataMap = JSON.parse(localStorage.getItem('userDataMap') || '{}');
+      if (userDataMap[email]) {
+        delete userDataMap[email];
+        localStorage.setItem('userDataMap', JSON.stringify(userDataMap));
+      }
+      
+      // Also remove any pending profile update if it belongs to this user
+      if (pendingUpdate && pendingUpdate.email === email) {
+        setPendingUpdate(null);
+        localStorage.removeItem('pendingProfileUpdate');
+      }
+      
+      showAlert('User Removed', `Account for ${email} has been deleted.`, 'success');
+    } catch (err) {
+      showAlert('Error', 'Failed to connect to server. User not deleted.', 'error');
     }
-    
-    // Also remove any pending profile update if it belongs to this user
-    if (pendingUpdate && pendingUpdate.email === email) {
-      setPendingUpdate(null);
-      localStorage.removeItem('pendingProfileUpdate');
-    }
-    
-    showAlert('User Removed', `Account for ${email} has been deleted.`, 'success');
   };
 
   const addNotification = (email: string, message: string) => {

@@ -128,6 +128,78 @@ app.post("/api/bookings", authenticateToken, async (req: any, res: any) => {
   }
 });
 
+// ==========================================
+// ADMIN USER MANAGEMENT ROUTES
+// ==========================================
+
+app.get("/api/admin/users", authenticateToken, async (req: any, res: any) => {
+  try {
+    const requester = await prisma.user.findUnique({ where: { id: req.user.userId } });
+    if (!requester || requester.role !== "ADMIN") {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    
+    const users = await prisma.user.findMany({
+      orderBy: { created_at: 'desc' }
+    });
+    
+    const sanitizedUsers = users.map(u => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      role: u.role,
+      quick_upi_balance: u.quick_upi_balance,
+      avatar_url: u.avatar_url,
+      profile: {
+        name: u.name,
+        email: u.email,
+        avatar: u.avatar_url || ''
+      }
+    }));
+    
+    res.json(sanitizedUsers);
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.delete("/api/admin/users/:email", authenticateToken, async (req: any, res: any) => {
+  try {
+    const requester = await prisma.user.findUnique({ where: { id: req.user.userId } });
+    if (!requester || requester.role !== "ADMIN") {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    
+    const { email } = req.params;
+    if (requester.email === email) {
+      return res.status(400).json({ error: "Cannot delete yourself" });
+    }
+    
+    const userToDelete = await prisma.user.findUnique({ where: { email } });
+    if (!userToDelete) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    
+    // Delete associated bookings/seatlocks/transactions/etc. to avoid foreign key violations
+    await prisma.booking.deleteMany({ where: { user_id: userToDelete.id } });
+    await prisma.transaction.deleteMany({ where: { user_id: userToDelete.id } });
+    await prisma.supportTicket.deleteMany({ where: { user_id: userToDelete.id } });
+    await prisma.nameChangeRequest.deleteMany({ where: { user_id: userToDelete.id } });
+    await prisma.notification.deleteMany({ where: { user_id: userToDelete.id } });
+    await prisma.review.deleteMany({ where: { user_id: userToDelete.id } });
+    await prisma.waitlist.deleteMany({ where: { user_id: userToDelete.id } });
+    await prisma.seatLock.deleteMany({ where: { user_id: userToDelete.id } });
+    await prisma.auditLog.deleteMany({ where: { admin_id: userToDelete.id } });
+    
+    await prisma.user.delete({ where: { id: userToDelete.id } });
+    
+    res.json({ message: "User deleted successfully" });
+  } catch (error) {
+    console.error("Delete user error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 const lockMap: Record<string, string> = {};
 
 io.on("connection", (socket) => {
