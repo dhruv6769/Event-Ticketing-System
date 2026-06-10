@@ -227,6 +227,13 @@ export default function Login() {
         localStorage.setItem('walletBalance', data.user.balance?.toString() || '0');
         localStorage.setItem('isLoggedIn', 'true');
         
+        const userFundsReg = JSON.parse(localStorage.getItem('userDataMap') || '{}');
+        if (userFundsReg[data.user.email] && userFundsReg[data.user.email].upiPin) {
+          localStorage.setItem('upiPin', userFundsReg[data.user.email].upiPin);
+        } else {
+          localStorage.removeItem('upiPin');
+        }
+        
         if (data.user.role === 'ADMIN') {
           localStorage.setItem('isAdminLoggedIn', 'true');
           isAdmin = true;
@@ -258,6 +265,13 @@ export default function Login() {
         localStorage.setItem('token', data.token);
         localStorage.setItem('walletBalance', data.user.balance?.toString() || '0');
         localStorage.setItem('isLoggedIn', 'true');
+
+        const userFundsLog = JSON.parse(localStorage.getItem('userDataMap') || '{}');
+        if (userFundsLog[data.user.email] && userFundsLog[data.user.email].upiPin) {
+          localStorage.setItem('upiPin', userFundsLog[data.user.email].upiPin);
+        } else {
+          localStorage.removeItem('upiPin');
+        }
 
         if (data.user.role === 'ADMIN') {
           localStorage.setItem('isAdminLoggedIn', 'true');
