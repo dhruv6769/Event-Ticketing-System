@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:20
 
 WORKDIR /app
 
@@ -8,7 +8,8 @@ RUN npm install
 COPY . .
 
 RUN npx prisma generate
+RUN npm run build
 
-EXPOSE 5000
+EXPOSE 5001
 
-CMD ["npx", "tsx", "src/index.ts"]
+CMD ["npm", "start"]
