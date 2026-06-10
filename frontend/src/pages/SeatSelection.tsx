@@ -1,0 +1,633 @@
+import { useState, useEffect, useRef } from 'react';
+import { io, Socket } from 'socket.io-client';
+import { ArrowLeft, X, XCircle, CheckCircle } from 'lucide-react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import NarendraModiStadium from '../components/NarendraModiStadium';
+import WankhedeStadium from '../components/WankhedeStadium';
+import EdenGardens from '../components/EdenGardens';
+import ChinnaswamyStadium from '../components/ChinnaswamyStadium';
+import MovieTheaterLayout from '../components/MovieTheaterLayout';
+import { motion, AnimatePresence } from 'framer-motion';
+import PageWrapper from '../components/PageWrapper';
+
+type LayoutType = 'narendra' | 'wankhede' | 'eden' | 'chinnaswamy' | 'velodrome' | 'theatre';
+
+const MOCK_EVENTS = [
+  // Concerts
+  { id: 1, title: "Coldplay: Music of the Spheres", category: "Concert", venue: "Narendra Modi Stadium", date: "Nov 20, 2026", price: "₹6000", image: "/coldplay.png", badge: "Selling Fast" },
+  { id: 2, title: "Arijit Singh Live", category: "Concert", venue: "Wankhede Stadium", date: "Dec 31, 2026", price: "₹3500", image: "/arijit.png", badge: "Almost Full" },
+  { id: 3, title: "Diljit Dosanjh: Dil-Luminati", category: "Concert", venue: "Eden Gardens", date: "Oct 15, 2026", price: "₹4500", image: "/diljit.png", badge: "Selling Fast" },
+  { id: 4, title: "Dua Lipa: Radical Optimism", category: "Concert", venue: "M. Chinnaswamy Stadium", date: "Jan 10, 2027", price: "₹5500", image: "/dua.png", badge: "Available" },
+  { id: 5, title: "Ed Sheeran: Mathematics Tour", category: "Concert", venue: "Jio World Convention Centre", date: "Feb 14, 2027", price: "₹7000", image: "/edsheeran.png", badge: "Almost Full" },
+  
+  // Sports
+  { id: 6, title: "India vs Australia Test Match", category: "Sports", venue: "Eden Gardens", date: "Jan 05, 2027", price: "₹1200", image: "/ind-aus.png", badge: "Available" },
+  { id: 7, title: "IPL Final: CSK vs MI", category: "Sports", venue: "Narendra Modi Stadium", date: "May 28, 2027", price: "₹2500", image: "/csk-mi.png", badge: "Selling Fast" },
+  { id: 8, title: "RCB vs KKR", category: "Sports", venue: "M. Chinnaswamy Stadium", date: "April 15, 2027", price: "₹1800", image: "/rcb-kkr.png", badge: "Selling Fast" },
+  { id: 9, title: "Mumbai Indians vs Delhi Capitals", category: "Sports", venue: "Wankhede Stadium", date: "April 22, 2027", price: "₹1500", image: "/dc-mi.png", badge: "Available" },
+  { id: 10, title: "Pro Kabaddi League Finals", category: "Sports", venue: "Indira Gandhi Arena", date: "Nov 30, 2026", price: "₹800", image: "/pkl.png", badge: "Available" },
+
+  // Movies
+  { id: 11, title: "Kalki 2898 AD", category: "Movie", venue: "PVR Director's Cut", date: "Daily", price: "₹450", image: "/kalki.png", badge: "Selling Fast" },
+  { id: 12, title: "Deadpool & Wolverine", category: "Movie", venue: "PVR Icon", date: "Daily", price: "₹350", image: "/deadpool.png", badge: "Available" },
+  { id: 13, title: "Pushpa 2: The Rule", category: "Movie", venue: "PVR Director's Cut", date: "Aug 15, 2026", price: "₹500", image: "/pushpa.png", badge: "Almost Full" },
+  { id: 14, title: "Dune: Part Two IMAX", category: "Movie", venue: "PVR Icon", date: "Daily", price: "₹600", image: "/dune.png", badge: "Available" },
+  { id: 15, title: "Oppenheimer Re-release", category: "Movie", venue: "PVR Director's Cut", date: "Daily", price: "₹400", image: "/oppenheimer.png", badge: "Available" }
+];
+
+export default function SeatSelection() {
+  const { eventId } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const selectedDate = searchParams.get('date');
+  const selectedTime = searchParams.get('time');
+  
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
+  const [lockedSeats, setLockedSeats] = useState<{ [key: string]: string }>({});
+  const [timeLeft, setTimeLeft] = useState(600); // 10 minutes timeout
+
+  const [alertConfig, setAlertConfig] = useState<{ show: boolean, message: string, type: 'success' | 'error' }>({
+    show: false, message: '', type: 'success'
+  });
+
+  const showAlert = (message: string, type: 'error' | 'success' = 'error') => {
+    setAlertConfig({ show: true, type, message });
+    setTimeout(() => {
+      setAlertConfig(prev => ({ ...prev, show: false }));
+    }, 1500);
+  };
+  
+  const EVENT_ID = eventId || "event-1";
+  const socketRef = useRef<Socket | null>(null);
+  
+  // Include dynamic events from localStorage so newly added events work
+  const dynamicEvents = JSON.parse(localStorage.getItem('dynamicEvents') || '[]');
+  const allEvents = [...dynamicEvents, ...MOCK_EVENTS];
+  
+  const eventData = allEvents.find(e => e.id?.toString() === eventId?.toString()) || MOCK_EVENTS[0];
+  
+  // Set layout based on the event's venue with safer includes() checks
+  const venueName = (eventData.venue || '').toLowerCase();
+  const initialLayout: LayoutType = venueName.includes('wankhede') ? 'wankhede' 
+    : venueName.includes('narendra') ? 'narendra' 
+    : venueName.includes('eden') ? 'eden'
+    : venueName.includes('chinnaswamy') ? 'chinnaswamy'
+    : venueName.includes('pvr') ? 'theatre'
+    : 'velodrome';
+
+  const [activeLayout, setActiveLayout] = useState<LayoutType>(initialLayout);
+  const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
+  const [selectedBlockAngle, setSelectedBlockAngle] = useState<number>(0);
+  const [blockPrice, setBlockPrice] = useState<number>(1200);
+
+  // Keep active layout in sync if event ID changes without unmounting
+  useEffect(() => {
+    setActiveLayout(initialLayout);
+    setSelectedBlock(null);
+  }, [initialLayout]);
+
+  const MOCK_USER_ID = "user-123";
+
+  // Session Timeout Timer
+  useEffect(() => {
+    let timer: any;
+    if (selectedSeats.length > 0) {
+      timer = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            showAlert("Session Timeout! Seats released.", "error");
+            setSelectedSeats([]);
+            setSelectedBlock(null);
+            return 600;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      setTimeLeft(600);
+    }
+    return () => clearInterval(timer);
+  }, [selectedSeats.length]);
+
+  useEffect(() => {
+    const newSocket = io('http://localhost:5001');
+    socketRef.current = newSocket;
+    setSocket(newSocket);
+
+    newSocket.on("seat_locked", (data: { seatId: string, eventId: string, userId: string }) => {
+      if (data.eventId === EVENT_ID) {
+        setLockedSeats(prev => ({ ...prev, [data.seatId]: data.userId }));
+      }
+    });
+
+    const lockKeyPrefix = `${EVENT_ID}-${selectedDate || 'default'}-${selectedTime || 'default'}-${selectedBlock}`;
+    
+    // Initial load of globally occupied seats
+    const globalOccupied = JSON.parse(localStorage.getItem('globalOccupiedSeats') || '{}');
+    const globalLockedSeats: { [key: string]: string } = {};
+    if (globalOccupied[lockKeyPrefix]) {
+      globalOccupied[lockKeyPrefix].forEach((seatId: string) => {
+        globalLockedSeats[seatId] = 'occupied';
+      });
+    }
+    
+    setLockedSeats(globalLockedSeats);
+
+    return () => {
+      socketRef.current?.disconnect();
+    };
+  }, [selectedBlock, activeLayout, selectedSeats, EVENT_ID]);
+
+  const toggleSeat = (seatId: string) => {
+    if (lockedSeats[seatId] && lockedSeats[seatId] !== MOCK_USER_ID) return;
+    
+    if (selectedSeats.includes(seatId)) {
+      setSelectedSeats(prev => prev.filter(id => id !== seatId));
+    } else {
+      if (selectedSeats.length >= 10) return showAlert("Maximum 10 seats allowed.");
+      setSelectedSeats(prev => [...prev, seatId]);
+      socket?.emit("lock_seat", { seatId, userId: MOCK_USER_ID, eventId: EVENT_ID });
+    }
+  };
+
+
+
+  // MACRO VIEWS
+  const renderNarendraModi = () => {
+    return (
+      <NarendraModiStadium 
+        onBlockSelect={(blockName, price, angle) => {
+          setSelectedBlock(blockName);
+          setBlockPrice(price);
+          setSelectedBlockAngle(angle);
+        }} 
+      />
+    );
+  };
+
+  const renderWankhede = () => {
+    return (
+      <WankhedeStadium 
+        onBlockSelect={(blockName, price, angle) => {
+          setSelectedBlock(blockName);
+          setBlockPrice(price);
+          setSelectedBlockAngle(angle);
+        }} 
+      />
+    );
+  };
+
+  const renderEdenGardens = () => {
+    return (
+      <EdenGardens 
+        onBlockSelect={(blockName, price, angle) => {
+          setSelectedBlock(blockName);
+          setBlockPrice(price);
+          setSelectedBlockAngle(angle);
+        }} 
+      />
+    );
+  };
+
+  const renderChinnaswamy = () => {
+    return (
+      <ChinnaswamyStadium 
+        onBlockSelect={(blockName, price, angle) => {
+          setSelectedBlock(blockName);
+          setBlockPrice(price);
+          setSelectedBlockAngle(angle);
+        }} 
+      />
+    );
+  };
+
+  const renderVelodrome = () => {
+    return (
+      <div className="relative w-[500px] h-80 flex items-center justify-center">
+        {/* Track */}
+        <div className="absolute w-[400px] h-56 rounded-full bg-cyan-500/20 border-8 border-cyan-500/40 flex items-center justify-center text-cyan-500/50 font-bold tracking-widest text-2xl">
+          VELODROME
+        </div>
+        
+        {/* North Stand */}
+        <div onClick={() => setSelectedBlock("North Track Stand")} className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-12 bg-yellow-500/20 border border-yellow-500/50 rounded-t-3xl cursor-pointer hover:bg-yellow-500/40 flex items-center justify-center text-xs font-bold">
+          North Track Stand
+        </div>
+        
+        {/* South Stand */}
+        <div onClick={() => setSelectedBlock("South Track Stand")} className="absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-12 bg-yellow-500/20 border border-yellow-500/50 rounded-b-3xl cursor-pointer hover:bg-yellow-500/40 flex items-center justify-center text-xs font-bold">
+          South Track Stand
+        </div>
+
+        {/* East Curve */}
+        <div onClick={() => setSelectedBlock("East Curve")} className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-40 bg-orange-500/20 border border-orange-500/50 rounded-r-full cursor-pointer hover:bg-orange-500/40 flex items-center justify-center text-xs font-bold writing-vertical-rl rotate-180">
+          EAST CURVE
+        </div>
+
+        {/* West Curve */}
+        <div onClick={() => setSelectedBlock("West Curve")} className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-40 bg-orange-500/20 border border-orange-500/50 rounded-l-full cursor-pointer hover:bg-orange-500/40 flex items-center justify-center text-xs font-bold writing-vertical-rl">
+          WEST CURVE
+        </div>
+      </div>
+    );
+  };
+
+  const renderTheatre = () => {
+    return (
+      <MovieTheaterLayout 
+        onBlockSelect={(blockName, price, angle) => {
+          setSelectedBlock(blockName);
+          setBlockPrice(price);
+          setSelectedBlockAngle(angle);
+        }}
+      />
+    );
+  }
+
+  // MICRO VIEW (Seat Grid)
+  const renderSeatGrid = () => {
+    if (activeLayout === 'theatre') {
+      const rows = selectedBlock === 'Recliners' ? 4 : selectedBlock === 'Executive' ? 6 : 8;
+      const seatsPerRow = selectedBlock === 'Recliners' ? 12 : 16;
+      const seats = [];
+
+      // Rectangular grid
+      const seatSize = 24;
+      const gap = 8;
+      const gridWidth = seatsPerRow * (seatSize + gap);
+      const gridHeight = rows * (seatSize + gap);
+      
+      const startX = -gridWidth / 2;
+      const startY = -gridHeight / 2;
+
+      for (let rIdx = 0; rIdx < rows; rIdx++) {
+        for (let sIdx = 0; sIdx < seatsPerRow; sIdx++) {
+          const seatId = `${String.fromCharCode(65 + rIdx)}${sIdx + 1}`;
+          const isLocked = lockedSeats[seatId];
+          const isSelected = selectedSeats.includes(seatId);
+
+          let fill = '#334155'; // default empty
+          if (isLocked) fill = '#ef4444'; // locked
+          if (isSelected) fill = '#22c55e'; // selected
+
+          const x = startX + sIdx * (seatSize + gap);
+          const y = startY + rIdx * (seatSize + gap);
+
+          seats.push(
+            <g 
+              key={seatId} 
+              onClick={() => !isLocked && toggleSeat(seatId)}
+              className={`transition-all duration-100 cursor-pointer ${isLocked ? 'cursor-not-allowed opacity-50' : 'hover:scale-[1.2]'}`}
+              style={{ transformOrigin: `${x + seatSize/2}px ${y + seatSize/2}px` }}
+            >
+              <rect x={x} y={y} width={seatSize} height={seatSize} fill={fill} rx={4} />
+              <path 
+                d={`M ${x + 4} ${y + seatSize - 4} L ${x + seatSize - 4} ${y + seatSize - 4}`} 
+                stroke="rgba(255,255,255,0.5)" 
+                strokeWidth="2" 
+                opacity={isSelected ? 1 : 0} 
+              />
+            </g>
+          );
+        }
+      }
+
+      return (
+        <div className="flex-1 flex flex-col p-6 overflow-hidden relative">
+          <div className="absolute top-6 left-6 z-50">
+            <button 
+              onClick={() => setSelectedBlock(null)}
+              className="flex items-center gap-2 text-gray-400 hover:text-white bg-black/60 hover:bg-black/80 backdrop-blur-md px-6 py-3 rounded-full border border-white/10 hover:border-white/30 transition-all duration-300 hover:scale-105 shadow-lg shadow-black/50"
+            >
+              <ArrowLeft size={20} /> Back to Theatre
+            </button>
+          </div>
+
+          <div className="text-center mt-2 z-10">
+            <h2 className="text-4xl font-heading mb-2 text-white">{selectedBlock}</h2>
+            <p className="text-[var(--color-gold)] font-medium">Screen is facing you</p>
+          </div>
+
+          <div className="flex-1 w-full h-full flex flex-col items-center justify-center -mt-10 relative">
+            <div className="w-full max-w-[800px] h-4 bg-gradient-to-b from-white/40 to-transparent rounded-t-full mb-16 relative shadow-[0_0_50px_rgba(255,255,255,0.2)]">
+              <p className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold tracking-[0.5em] text-white/50">SCREEN</p>
+            </div>
+            <div className="w-full max-w-[750px] flex items-center justify-center">
+              <svg 
+                viewBox="-400 -200 800 400" 
+                className="w-full h-full drop-shadow-2xl transition-all duration-[500ms]"
+              >
+                {seats}
+              </svg>
+            </div>
+          </div>
+
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/50 backdrop-blur px-8 py-4 rounded-full flex gap-8 shadow-2xl z-20 border border-white/10">
+            <div className="flex items-center gap-3"><div className="w-4 h-3 rounded-sm bg-slate-700"></div><span className="text-sm font-medium">Available</span></div>
+            <div className="flex items-center gap-3"><div className="w-4 h-3 rounded-sm bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div><span className="text-sm font-medium text-green-400">Selected</span></div>
+            <div className="flex items-center gap-3"><div className="w-4 h-3 rounded-sm bg-red-500 opacity-50"></div><span className="text-sm font-medium text-gray-400">Locked</span></div>
+          </div>
+        </div>
+      );
+    }
+
+    const isWankhede = activeLayout === 'wankhede';
+    const totalRows = activeLayout === 'narendra' ? 40 : activeLayout === 'eden' ? 30 : 22;
+    const seats = [];
+    const cx = 500;
+    const cy = 1300; // Pitch is way down at the bottom
+    const rIn = 650; // Front row radius (increased to not overlap pitch)
+    const rOut = 1200; // Back row radius
+    const baseAngleSpan = 50; // Spread of the wedge in degrees
+
+    for (let rIdx = 0; rIdx < totalRows; rIdx++) {
+      const rowRadius = rIn + (rIdx / (totalRows - 1)) * (rOut - rIn);
+      // Wankhede has fewer seats per row
+      const seatsInThisRow = isWankhede 
+        ? 15 + Math.floor((rIdx / totalRows) * 30) 
+        : 30 + Math.floor((rIdx / totalRows) * 60); 
+      
+      const angleStep = baseAngleSpan / (seatsInThisRow - 1);
+      const startAngle = 270 - (baseAngleSpan / 2);
+
+      for (let sIdx = 0; sIdx < seatsInThisRow; sIdx++) {
+        const angleDeg = startAngle + sIdx * angleStep;
+        const angleRad = angleDeg * (Math.PI / 180);
+        
+        const x = cx + rowRadius * Math.cos(angleRad);
+        const y = cy + rowRadius * Math.sin(angleRad);
+        
+        const seatId = `${String.fromCharCode(65 + Math.floor(rIdx/2))}${sIdx + 1}-${rIdx}`;
+        const isLocked = lockedSeats[seatId];
+        const isSelected = selectedSeats.includes(seatId);
+
+        let fill = '#334155'; // default empty
+        if (isLocked) fill = '#ef4444'; // locked
+        if (isSelected) fill = '#22c55e'; // selected
+
+        // Make seats physically larger in Wankhede since there are fewer of them
+        const rectW = isWankhede ? 10 : 6;
+        const rectH = isWankhede ? 8 : 4;
+        const rx = isWankhede ? 2 : 1;
+
+        seats.push(
+          <g 
+            key={seatId} 
+            onClick={() => !isLocked && toggleSeat(seatId)}
+            className={`transition-all duration-100 cursor-pointer ${isLocked ? 'cursor-not-allowed opacity-50' : 'hover:scale-[2]'}`}
+            style={{ transformOrigin: `${x}px ${y}px` }}
+          >
+            <rect x={x - rectW/2} y={y - rectH/2} width={rectW} height={rectH} fill={fill} rx={rx} />
+            <path 
+              d={`M ${x - rectW/2} ${y + rectH/2} L ${x + rectW/2} ${y + rectH/2}`} 
+              stroke="rgba(255,255,255,0.5)" 
+              strokeWidth="1" 
+              opacity={isSelected ? 1 : 0} 
+            />
+          </g>
+        );
+      }
+    }
+
+    return (
+      <div className="flex-1 flex flex-col p-6 overflow-hidden relative">
+        <div className="absolute top-6 left-6 z-10">
+          <button 
+            onClick={() => setSelectedBlock(null)}
+            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors bg-black/50 backdrop-blur px-4 py-2 rounded-full border border-white/10"
+          >
+            <ArrowLeft size={20} /> Back to Stadium
+          </button>
+        </div>
+
+        <div className="text-center mt-2 z-10">
+          <h2 className="text-4xl font-heading mb-2 text-white">{selectedBlock}</h2>
+          <p className="text-[var(--color-gold)] font-medium">Perspective aligned with stadium block</p>
+        </div>
+
+        <div className="flex-1 w-full h-full flex items-center justify-center -mt-10 relative">
+          <div className="w-full max-w-[750px] max-h-[750px] aspect-square relative">
+            <svg 
+              viewBox="-150 -150 1300 1300" 
+              className="w-full h-full drop-shadow-2xl transition-all duration-[1500ms] ease-in-out"
+              style={{ transform: `rotate(${selectedBlockAngle}deg)` }}
+            >
+              <ellipse cx="500" cy="800" rx="200" ry="80" fill="#4ade80" opacity="0.1" />
+              <text 
+                x="500" y="780" 
+                fill="#4ade80" 
+                fontSize="24" 
+                fontWeight="bold" 
+                textAnchor="middle" 
+                opacity="0.5" 
+                className="tracking-[1em]"
+                transform={`rotate(${-selectedBlockAngle} 500 780)`}
+              >
+                PITCH
+              </text>
+              
+              {seats}
+            </svg>
+          </div>
+        </div>
+
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/50 backdrop-blur px-8 py-4 rounded-full flex gap-8 shadow-2xl z-20 border border-white/10">
+          <div className="flex items-center gap-3"><div className="w-4 h-3 rounded-sm bg-slate-700"></div><span className="text-sm font-medium">Available</span></div>
+          <div className="flex items-center gap-3"><div className="w-4 h-3 rounded-sm bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div><span className="text-sm font-medium text-green-400">Selected</span></div>
+          <div className="flex items-center gap-3"><div className="w-4 h-3 rounded-sm bg-red-500 opacity-50"></div><span className="text-sm font-medium text-gray-400">Locked</span></div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <PageWrapper>
+      <div className="container mx-auto px-6 pt-28 pb-8 flex flex-col lg:flex-row gap-8 h-screen">
+        
+        {/* Dynamic Layout Area */}
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+          className="flex-1 glass rounded-3xl p-8 flex flex-col items-center overflow-auto relative border border-white/5"
+        >
+          <div className="w-full flex justify-between items-center mb-8">
+            <h2 className="text-4xl font-heading text-[var(--color-gold)] drop-shadow-md">
+              {activeLayout === 'narendra' && 'Narendra Modi Stadium'}
+              {activeLayout === 'wankhede' && 'Wankhede Stadium'}
+              {activeLayout === 'eden' && 'Eden Gardens'}
+              {activeLayout === 'chinnaswamy' && 'M. Chinnaswamy Stadium'}
+              {activeLayout === 'velodrome' && 'NSCI Velodrome'}
+              {activeLayout === 'theatre' && 'Movie Theatre'}
+            </h2>
+            <select 
+              className="bg-black/50 border border-white/10 rounded-xl px-6 py-3 text-sm outline-none font-medium hover:border-[var(--color-brand)] transition-colors focus:ring-2 focus:ring-[var(--color-brand)]/50"
+              value={activeLayout}
+              onChange={(e) => {
+                setActiveLayout(e.target.value as LayoutType);
+                setSelectedBlock(null);
+              }}
+            >
+              <option value="narendra">Narendra Modi Stadium</option>
+              <option value="wankhede">Wankhede Stadium</option>
+              <option value="eden">Eden Gardens</option>
+              <option value="chinnaswamy">M. Chinnaswamy Stadium</option>
+              <option value="velodrome">NSCI Velodrome</option>
+              <option value="theatre">Movie Theatre</option>
+            </select>
+          </div>
+
+          <div className="flex-1 w-full flex items-center justify-center relative">
+            {!selectedBlock ? (
+              <>
+                {activeLayout === 'narendra' && renderNarendraModi()}
+                {activeLayout === 'wankhede' && renderWankhede()}
+                {activeLayout === 'eden' && renderEdenGardens()}
+                {activeLayout === 'chinnaswamy' && renderChinnaswamy()}
+                {activeLayout === 'velodrome' && renderVelodrome()}
+                {activeLayout === 'theatre' && renderTheatre()}
+              </>
+            ) : (
+              renderSeatGrid()
+            )}
+          </div>
+
+          <div className="flex gap-6 mt-8 text-sm font-medium bg-black/40 px-8 py-4 rounded-full border border-white/10 backdrop-blur-md shadow-xl">
+            <div className="flex items-center gap-3"><div className="w-4 h-4 bg-slate-700 rounded-sm"></div> <span className="text-gray-300">Available</span></div>
+            <div className="flex items-center gap-3"><div className="w-4 h-4 bg-[var(--color-brand)] rounded-sm shadow-[0_0_10px_var(--color-brand)]"></div> <span className="text-white">Booked</span></div>
+            <div className="flex items-center gap-3"><div className="w-4 h-4 bg-[var(--color-gold)] rounded-sm shadow-[0_0_10px_var(--color-gold)]"></div> <span className="text-white">Locked</span></div>
+            <div className="flex items-center gap-3"><div className="w-4 h-4 bg-green-500 rounded-sm shadow-[0_0_10px_#22c55e]"></div> <span className="text-white">Selected</span></div>
+          </div>
+        </motion.div>
+
+        {/* Checkout Sidebar */}
+        <motion.div 
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="w-full lg:w-96 glass rounded-3xl p-8 flex flex-col h-full sticky top-24 border border-white/5"
+        >
+          <h3 className="text-3xl font-heading mb-6 border-b border-white/10 pb-4">Booking Summary</h3>
+          
+          {selectedSeats.length > 0 ? (
+            <>
+              <div className="flex justify-between items-center text-sm mb-4 bg-white/5 px-4 py-3 rounded-xl border border-white/10">
+                <span className="text-[var(--color-gold)] font-bold">Time Remaining:</span>
+                <span className={`font-mono font-bold text-xl ${timeLeft < 60 ? 'text-red-500 animate-pulse' : 'text-white'}`}>
+                  {Math.floor(timeLeft / 60).toString().padStart(2, '0')}:{(timeLeft % 60).toString().padStart(2, '0')}
+                </span>
+              </div>
+              
+              <div className="flex-1 overflow-auto mt-2 pr-2 custom-scrollbar">
+                {selectedSeats.map(seat => (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    key={seat} 
+                    className="flex justify-between items-center bg-white/5 border border-white/10 p-4 rounded-xl mb-3 group hover:border-white/20 transition-all"
+                  >
+                    <div>
+                      <p className="font-bold text-lg">{seat}</p>
+                      <p className="text-xs text-[var(--color-brand)] font-medium flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-brand)] animate-pulse"></span>
+                        Live Lock active
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="font-bold text-xl">₹{blockPrice}</span>
+                      <button 
+                        onClick={() => toggleSeat(seat)} 
+                        className="text-gray-500 hover:text-[var(--color-brand)] hover:bg-[var(--color-brand)]/10 transition-all p-2 rounded-full"
+                        title="Remove seat"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              <div className="mt-auto pt-6 border-t border-white/10">
+                <div className="flex justify-between items-end mb-6">
+                  <span className="text-gray-400 font-medium">Total ({selectedSeats.length} seats)</span>
+                  <span className="text-4xl font-heading text-[var(--color-gold)] drop-shadow-[0_0_10px_rgba(235,178,47,0.3)]">₹{selectedSeats.length * blockPrice}</span>
+                </div>
+                <button 
+                  onClick={() => {
+                    navigate('/payment', { 
+                      state: { 
+                        totalAmount: selectedSeats.length * blockPrice,
+                        seatCount: selectedSeats.length,
+                        eventId: EVENT_ID,
+                        eventTitle: eventData.title,
+                        eventVenue: eventData.venue,
+                        blockName: selectedBlock,
+                        eventImage: eventData.image,
+                        date: selectedDate,
+                        time: selectedTime,
+                        seats: selectedSeats
+                      } 
+                    });
+                  }} 
+                  className="w-full bg-[var(--color-brand)] hover:bg-red-600 text-white font-bold py-5 rounded-2xl transition-all shadow-[0_0_20px_rgba(230,57,70,0.4)] text-lg"
+                >
+                  Proceed to Payment
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center text-gray-500 text-center">
+              <div className="w-20 h-20 rounded-full border-2 border-dashed border-gray-600 mb-6 flex items-center justify-center opacity-50">
+                <span className="text-3xl">+</span>
+              </div>
+              <p className="text-xl font-heading text-gray-400 mb-2">No seats selected.</p>
+              <p className="text-sm max-w-[200px] mx-auto">First select a block, then select your specific seats from the layout.</p>
+            </div>
+          )}
+        </motion.div>
+      </div>
+
+      <AnimatePresence>
+        {alertConfig.show && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm pointer-events-none"
+          >
+            <motion.div
+              initial={{ scale: 0.8, y: 30, rotateX: 20 }}
+              animate={{ scale: 1, y: 0, rotateX: 0 }}
+              exit={{ scale: 0.8, y: 30, rotateX: -20 }}
+              transition={{ type: "spring", damping: 20, stiffness: 300 }}
+              className="relative max-w-sm w-full bg-black/90 backdrop-blur-3xl border border-white/10 p-6 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden text-center pointer-events-auto"
+              style={{ transformStyle: 'preserve-3d', perspective: 1000 }}
+            >
+              <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${alertConfig.type === 'success' ? 'from-green-500 to-green-300' : 'from-red-500 to-red-300'}`}></div>
+              
+              <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 blur-[60px] opacity-20 ${alertConfig.type === 'success' ? 'bg-green-500' : 'bg-red-500'}`}></div>
+
+              <motion.div 
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", delay: 0.1, damping: 15 }}
+                className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 bg-white/5 relative z-10 shadow-inner ${alertConfig.type === 'success' ? 'text-green-400' : 'text-red-400'}`}
+              >
+                {alertConfig.type === 'success' ? <CheckCircle size={32} /> : <XCircle size={32} />}
+              </motion.div>
+              
+              <p className="text-gray-200 text-lg relative z-10 font-bold tracking-wide">
+                {alertConfig.message}
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+    </PageWrapper>
+  );
+}

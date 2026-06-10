@@ -1,0 +1,259 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum EventStatus {
+  UPCOMING
+  LIVE
+  COMPLETED
+}
+
+enum EventType {
+  CONCERT
+  CRICKET
+  COMEDY
+  THEATRE
+}
+
+enum SeatStatus {
+  AVAILABLE
+  LOCKED
+  BOOKED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum TransactionType {
+  CREDIT
+  DEBIT
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id                 String               @id @default(uuid())
+  name               String
+  email              String               @unique
+  password_hash      String
+  role               Role                 @default(USER)
+  quick_upi_balance  Float                @default(0.0)
+  avatar_url         String?
+  is_verified        Boolean              @default(false)
+  failed_attempts    Int                  @default(0)
+  locked_until       DateTime?
+  created_at         DateTime             @default(now())
+
+  bookings           Booking[]
+  transactions       Transaction[]
+  support_tickets    SupportTicket[]
+  name_requests      NameChangeRequest[]
+  notifications      Notification[]
+  reviews            Review[]
+  waitlists          Waitlist[]
+  seat_locks         SeatLock[]
+  audit_logs         AuditLog[]           @relation("AdminAudit")
+}
+
+model Venue {
+  id                 String               @id @default(uuid())
+  name               String
+  city               String
+  address            String
+  capacity           Int
+  image_url          String?
+  map_svg_path       String?
+  created_at         DateTime             @default(now())
+
+  events             Event[]
+  sections           Section[]
+}
+
+model Event {
+  id                 String               @id @default(uuid())
+  venue_id           String
+  title              String
+  type               EventType
+  description        String
+  date               DateTime
+  time               String
+  banner_url         String?
+  status             EventStatus          @default(UPCOMING)
+
+  venue              Venue                @relation(fields: [venue_id], references: [id])
+  bookings           Booking[]
+  seat_locks         SeatLock[]
+  reviews            Review[]
+  waitlists          Waitlist[]
+}
+
+model Section {
+  id                 String               @id @default(uuid())
+  venue_id           String
+  name               String
+  color_code         String?
+  total_seats        Int
+  price              Float
+
+  venue              Venue                @relation(fields: [venue_id], references: [id])
+  seats              Seat[]
+  waitlists          Waitlist[]
+}
+
+model Seat {
+  id                 String               @id @default(uuid())
+  section_id         String
+  row_label          String
+  seat_number        String
+  status             SeatStatus           @default(AVAILABLE)
+
+  section            Section              @relation(fields: [section_id], references: [id])
+  booking_seats      BookingSeat[]
+  seat_locks         SeatLock[]
+}
+
+model Booking {
+  id                 String               @id @default(uuid())
+  user_id            String
+  event_id           String
+  total_amount       Float
+  payment_method     String               @default("QUICK_UPI")
+  payment_status     PaymentStatus        @default(PENDING)
+  ticket_id          String               @unique @default(uuid())
+  qr_code_url        String?
+  created_at         DateTime             @default(now())
+
+  user               User                 @relation(fields: [user_id], references: [id])
+  event              Event                @relation(fields: [event_id], references: [id])
+  booking_seats      BookingSeat[]
+}
+
+model BookingSeat {
+  id                 String               @id @default(uuid())
+  booking_id         String
+  seat_id            String
+  price_at_booking   Float
+
+  booking            Booking              @relation(fields: [booking_id], references: [id])
+  seat               Seat                 @relation(fields: [seat_id], references: [id])
+}
+
+model SeatLock {
+  id                 String               @id @default(uuid())
+  seat_id            String
+  user_id            String
+  event_id           String
+  locked_until       DateTime
+
+  seat               Seat                 @relation(fields: [seat_id], references: [id])
+  user               User                 @relation(fields: [user_id], references: [id])
+  event              Event                @relation(fields: [event_id], references: [id])
+}
+
+model Transaction {
+  id                 String               @id @default(uuid())
+  user_id            String
+  type               TransactionType
+  amount             Float
+  description        String
+  reference_id       String?
+  created_at         DateTime             @default(now())
+
+  user               User                 @relation(fields: [user_id], references: [id])
+}
+
+model SupportTicket {
+  id                 String               @id @default(uuid())
+  user_id            String
+  subject            String
+  message            String
+  status             TicketStatus         @default(OPEN)
+  admin_reply        String?
+  created_at         DateTime             @default(now())
+  updated_at         DateTime             @updatedAt
+
+  user               User                 @relation(fields: [user_id], references: [id])
+}
+
+model NameChangeRequest {
+  id                 String               @id @default(uuid())
+  user_id            String
+  requested_name     String
+  status             RequestStatus        @default(PENDING)
+  admin_note         String?
+  created_at         DateTime             @default(now())
+
+  user               User                 @relation(fields: [user_id], references: [id])
+}
+
+model Notification {
+  id                 String               @id @default(uuid())
+  user_id            String
+  title              String
+  message            String
+  is_read            Boolean              @default(false)
+  type               String               // INFO, WARNING, SUCCESS
+  created_at         DateTime             @default(now())
+
+  user               User                 @relation(fields: [user_id], references: [id])
+}
+
+model Review {
+  id                 String               @id @default(uuid())
+  user_id            String
+  event_id           String
+  rating             Int                  @default(5)
+  comment            String?
+  created_at         DateTime             @default(now())
+
+  user               User                 @relation(fields: [user_id], references: [id])
+  event              Event                @relation(fields: [event_id], references: [id])
+}
+
+model Waitlist {
+  id                 String               @id @default(uuid())
+  user_id            String
+  event_id           String
+  section_id         String
+  quantity           Int                  @default(1)
+  created_at         DateTime             @default(now())
+
+  user               User                 @relation(fields: [user_id], references: [id])
+  event              Event                @relation(fields: [event_id], references: [id])
+  section            Section              @relation(fields: [section_id], references: [id])
+}
+
+model AuditLog {
+  id                 String               @id @default(uuid())
+  admin_id           String
+  action             String
+  target_type        String
+  target_id          String
+  details            String
+  created_at         DateTime             @default(now())
+
+  admin              User                 @relation("AdminAudit", fields: [admin_id], references: [id])
+}
