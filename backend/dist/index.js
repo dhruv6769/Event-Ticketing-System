@@ -26,7 +26,7 @@ const httpServer = (0, http_1.createServer)(app);
 const io = new socket_io_1.Server(httpServer, {
     cors: { origin: "*" },
 });
-const prisma = new client_1.PrismaClient();
+const prisma = new client_1.PrismaClient({});
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey_change_in_production";
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
@@ -45,7 +45,7 @@ app.post("/api/auth/register", (req, res) => __awaiter(void 0, void 0, void 0, f
             data: { name, email, password_hash, quick_upi_balance: 5000.0 }
         });
         const token = jsonwebtoken_1.default.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-        res.json({ token, user: { id: user.id, name: user.name, email: user.email, balance: user.quick_upi_balance, avatar: user.avatar_url } });
+        res.json({ token, user: { id: user.id, name: user.name, email: user.email, balance: user.quick_upi_balance, avatar: user.avatar_url, role: user.role } });
     }
     catch (error) {
         res.status(500).json({ error: "Internal server error" });
@@ -61,7 +61,7 @@ app.post("/api/auth/login", (req, res) => __awaiter(void 0, void 0, void 0, func
         if (!valid)
             return res.status(401).json({ error: "Invalid credentials" });
         const token = jsonwebtoken_1.default.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-        res.json({ token, user: { id: user.id, name: user.name, email: user.email, balance: user.quick_upi_balance, avatar: user.avatar_url } });
+        res.json({ token, user: { id: user.id, name: user.name, email: user.email, balance: user.quick_upi_balance, avatar: user.avatar_url, role: user.role } });
     }
     catch (error) {
         res.status(500).json({ error: "Internal server error" });

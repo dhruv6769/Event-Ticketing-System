@@ -207,6 +207,7 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+    let isAdmin = false;
 
     if (!isLogin) {
       if (password !== confirmPassword) { showAlert('Passwords do not match!'); return; }
@@ -221,10 +222,17 @@ export default function Login() {
         if (!res.ok) { showAlert(data.error || 'Registration failed'); return; }
         
         // Save user data locally for immediate UI use
-        localStorage.setItem('userProfile', JSON.stringify({ name: data.user.name, email: data.user.email, avatar: data.user.avatar || '' }));
+        localStorage.setItem('userProfile', JSON.stringify({ name: data.user.name, email: data.user.email, avatar: data.user.avatar || '', role: data.user.role }));
         localStorage.setItem('token', data.token);
         localStorage.setItem('walletBalance', data.user.balance?.toString() || '0');
         localStorage.setItem('isLoggedIn', 'true');
+        
+        if (data.user.role === 'ADMIN') {
+          localStorage.setItem('isAdminLoggedIn', 'true');
+          isAdmin = true;
+        } else {
+          localStorage.removeItem('isAdminLoggedIn');
+        }
         
         // Clear mock data
         localStorage.setItem('myBookings', '[]');
@@ -237,12 +245,6 @@ export default function Login() {
         return;
       }
     } else {
-      if (email === 'admin@tixindia.com' && password === 'admin123') {
-        localStorage.setItem('isAdminLoggedIn', 'true');
-        navigate('/admin');
-        return;
-      }
-      
       try {
         const res = await fetch(`${API_URL}/api/auth/login`, {
           method: 'POST',
@@ -252,10 +254,17 @@ export default function Login() {
         const data = await res.json();
         if (!res.ok) { showAlert(data.error || 'Login failed'); return; }
 
-        localStorage.setItem('userProfile', JSON.stringify({ name: data.user.name, email: data.user.email, avatar: data.user.avatar || '' }));
+        localStorage.setItem('userProfile', JSON.stringify({ name: data.user.name, email: data.user.email, avatar: data.user.avatar || '', role: data.user.role }));
         localStorage.setItem('token', data.token);
         localStorage.setItem('walletBalance', data.user.balance?.toString() || '0');
         localStorage.setItem('isLoggedIn', 'true');
+
+        if (data.user.role === 'ADMIN') {
+          localStorage.setItem('isAdminLoggedIn', 'true');
+          isAdmin = true;
+        } else {
+          localStorage.removeItem('isAdminLoggedIn');
+        }
         
       } catch (err) {
         showAlert('Network error. Is backend running?');
@@ -265,7 +274,13 @@ export default function Login() {
     
     window.dispatchEvent(new Event('storage'));
     showAlert(isLogin ? 'Welcome back!' : 'Account created!', 'success');
-    setTimeout(() => navigate('/profile'), 800);
+    setTimeout(() => {
+      if (isAdmin) {
+        navigate('/admin');
+      } else {
+        navigate('/profile');
+      }
+    }, 800);
   };
 
   const pwStrength = getPasswordStrength(password);

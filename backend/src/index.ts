@@ -37,7 +37,7 @@ app.post("/api/auth/register", async (req, res) => {
       data: { name, email, password_hash, quick_upi_balance: 5000.0 }
     });
     const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user.id, name: user.name, email: user.email, balance: user.quick_upi_balance, avatar: user.avatar_url } });
+    res.json({ token, user: { id: user.id, name: user.name, email: user.email, balance: user.quick_upi_balance, avatar: user.avatar_url, role: user.role } });
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });
   }
@@ -53,7 +53,7 @@ app.post("/api/auth/login", async (req, res) => {
     if (!valid) return res.status(401).json({ error: "Invalid credentials" });
 
     const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user.id, name: user.name, email: user.email, balance: user.quick_upi_balance, avatar: user.avatar_url } });
+    res.json({ token, user: { id: user.id, name: user.name, email: user.email, balance: user.quick_upi_balance, avatar: user.avatar_url, role: user.role } });
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });
   }

@@ -327,6 +327,7 @@ export default function Profile() {
     localStorage.removeItem('upiPin');
     localStorage.removeItem('myCoupons');
     localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('isAdminLoggedIn');
     window.dispatchEvent(new Event('storage'));
     navigate('/login');
   };
