@@ -361,7 +361,7 @@ export default function Navbar() {
                 {/* Avatar */}
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                   <Link
-                    to="/profile"
+                    to={userProfile?.role === 'ADMIN' ? "/admin" : "/profile"}
                     className="group relative w-9 h-9 rounded-full overflow-hidden flex items-center justify-center transition-all duration-300"
                     style={{
                       border: '2px solid rgba(255,255,255,0.1)',
@@ -490,7 +490,7 @@ export default function Navbar() {
                 </Link>
               ) : (
                 <Link
-                  to="/profile"
+                  to={userProfile?.role === 'ADMIN' ? "/admin" : "/profile"}
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex items-center gap-3 px-5 py-4 rounded-2xl font-bold"
                   style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}

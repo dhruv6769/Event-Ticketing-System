@@ -229,6 +229,7 @@ export default function Profile() {
 
   useEffect(() => {
     if (localStorage.getItem('isLoggedIn') !== 'true') { navigate('/login'); return; }
+    if (userProfile?.role === 'ADMIN') { navigate('/admin'); return; }
     
     const fetchProfile = async () => {
       try {
