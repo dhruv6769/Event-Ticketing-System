@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { CreditCard, Wallet, Landmark, CheckCircle, Download, ArrowRight, Lock, X, AlertCircle, Sparkles } from 'lucide-react';
+import { CreditCard, Wallet, Landmark, CheckCircle, Download, ArrowRight, Lock, X, AlertCircle, Sparkles, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import QRCode from 'qrcode';
 import jsPDF from 'jspdf';
@@ -66,6 +66,14 @@ export default function Payment() {
     ? Math.round((singleTicketPrice * appliedCoupon.discount) / 100)
     : 0;
   const finalTotalAmount = Math.max(0, paymentData.totalAmount - discountAmount);
+  
+  const formattedDate = paymentData.date && paymentData.time 
+    ? `${new Date(paymentData.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at ${paymentData.time}` 
+    : "Nov 20, 2026";
+  
+  const seatsSummary = `${paymentData.blockName} - ${paymentData.seatCount} Seat(s)${appliedCoupon ? ' (Discount Applied)' : ''}`;
+
+  const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
 
   const handleApplyCoupon = () => {
     setCouponError('');
@@ -138,9 +146,6 @@ export default function Payment() {
       }
       
       const savedBookings = JSON.parse(localStorage.getItem('myBookings') || '[]');
-      const formattedDate = paymentData.date && paymentData.time ? `${new Date(paymentData.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at ${paymentData.time}` : "Nov 20, 2026";
-      
-      const seatsSummary = `${paymentData.blockName} - ${paymentData.seatCount} Seat(s)${appliedCoupon ? ' (Discount Applied)' : ''}`;
       
       const newBooking = {
         event: paymentData.eventTitle,
@@ -315,16 +320,16 @@ export default function Payment() {
   };
 
   const handleDownloadPDF = async () => {
-    const element = document.getElementById('ticket-receipt-content');
-    if (!element) return;
+    const el = document.getElementById('pdf-ticket-template-success');
+    if (!el) return;
     try {
-      const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#050507' });
+      el.style.display = 'flex';
+      const canvas = await html2canvas(el, { scale: 3, useCORS: true, backgroundColor: '#E5E7EB' });
+      el.style.display = 'none';
       const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Ticket_${paymentData.eventTitle.replace(/\s+/g, '_')}.pdf`);
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [250, 100] });
+      pdf.addImage(imgData, 'PNG', 0, 0, 250, 100);
+      pdf.save(`BookYourShow-Pass-${paymentData.eventTitle.replace(/\s+/g, '-')}.pdf`);
     } catch (error) {
       console.error('Failed to generate PDF', error);
     }
@@ -333,6 +338,58 @@ export default function Payment() {
   if (isSuccess) {
     return (
       <PageWrapper>
+        {/* Hidden PDF Success Template */}
+        <div style={{ position: 'absolute', left: '-9999px', top: 0, zIndex: -100 }}>
+          <div
+            id="pdf-ticket-template-success"
+            style={{ width: '1000px', height: '400px', background: '#E5E7EB', display: 'none', justifyContent: 'center', alignItems: 'center', position: 'relative' }}
+          >
+            <div style={{ width: '900px', height: '320px', background: '#ffffff', borderRadius: '16px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', display: 'flex', overflow: 'hidden', position: 'relative', color: '#1f2937', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+              <div style={{ width: '20px', background: '#E63946', height: '100%' }} />
+              <div style={{ flex: '1', padding: '30px', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', backgroundImage: 'radial-gradient(circle at 100% 100%, #f9fafb 0%, #ffffff 100%)' }}>
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-15deg)', fontSize: '120px', color: 'rgba(230,57,70,0.03)', fontWeight: 900, whiteSpace: 'nowrap', pointerEvents: 'none' }}>VIP ACCESS</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #f3f4f6', paddingBottom: '15px', zIndex: 10 }}>
+                  <div>
+                    <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 900, color: '#E63946', letterSpacing: '2px', textTransform: 'uppercase' }}>BookYourShow<span style={{ color: '#1f2937' }}>.</span></h1>
+                    <p style={{ margin: '5px 0 0 0', fontSize: '10px', color: '#6b7280', letterSpacing: '2px', fontWeight: 'bold' }}>OFFICIAL ADMISSION TICKET</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ margin: 0, fontSize: '20px', fontWeight: 900, color: '#EAB308' }}>₹{finalTotalAmount}</p>
+                    <p style={{ margin: '5px 0 0 0', fontSize: '10px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '1px' }}>Tax Included</p>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '20px', marginTop: '25px', zIndex: 10 }}>
+                  <div style={{ flex: 2 }}>
+                    <h2 style={{ fontSize: '38px', margin: '0 0 15px 0', fontWeight: 900, lineHeight: 1.1, color: '#111827', textTransform: 'uppercase' }}>{paymentData.eventTitle}</h2>
+                    <p style={{ margin: '0 0 5px 0', fontSize: '18px', fontWeight: 700, color: '#4b5563' }}><MapPin size={18} color="#E63946" style={{ display: 'inline' }} /> {paymentData.eventVenue}</p>
+                    <p style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#E63946' }}>{formattedDate}</p>
+                  </div>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px', paddingLeft: '25px', borderLeft: '2px solid #f3f4f6' }}>
+                    <div><p style={{ margin: '0 0 4px 0', fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 'bold' }}>Ticket Holder</p><p style={{ margin: 0, fontSize: '18px', fontWeight: 900, color: '#111827', textTransform: 'uppercase' }}>{userProfile.name || 'Premium Member'}</p></div>
+                    <div><p style={{ margin: '0 0 4px 0', fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 'bold' }}>Section / Seat</p><p style={{ margin: 0, fontSize: '18px', fontWeight: 900, color: '#E63946' }}>{seatsSummary}</p></div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '20px', zIndex: 10 }}>
+                  <div style={{ width: '280px', height: '40px', background: 'repeating-linear-gradient(90deg, #111827 0, #111827 3px, transparent 3px, transparent 6px, #111827 6px, #111827 8px, transparent 8px, transparent 11px, #111827 11px, #111827 16px, transparent 16px, transparent 19px)', opacity: 0.8 }} />
+                  <p style={{ margin: 0, fontSize: '12px', color: '#9ca3af', letterSpacing: '3px', fontFamily: 'monospace', fontWeight: 'bold' }}>TIX-{paymentData.eventTitle.substring(0, 3).toUpperCase()}-SUCCESS</p>
+                </div>
+              </div>
+              <div style={{ width: '2px', borderLeft: '4px dashed #d1d5db', position: 'relative' }}>
+                <div style={{ width: '40px', height: '40px', background: '#E5E7EB', borderRadius: '50%', position: 'absolute', top: '-20px', left: '-20px', boxShadow: 'inset 0 -5px 10px rgba(0,0,0,0.1)' }} />
+                <div style={{ width: '40px', height: '40px', background: '#E5E7EB', borderRadius: '50%', position: 'absolute', bottom: '-20px', left: '-20px', boxShadow: 'inset 0 5px 10px rgba(0,0,0,0.1)' }} />
+              </div>
+              <div style={{ width: '250px', background: '#f9fafb', padding: '30px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ background: 'white', padding: '15px', border: '1px solid #e5e7eb', borderRadius: '15px', marginBottom: '20px' }}>
+                  {qrCodeUrl ? <img src={qrCodeUrl} alt="QR" style={{ width: '130px', height: '130px' }} /> : <div style={{ width: '130px', height: '130px', background: '#eee' }} />}
+                </div>
+                <p style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: 900, textAlign: 'center', letterSpacing: '2px', color: '#111827' }}>ADMIT ONE</p>
+                <div style={{ width: '100%', borderTop: '2px solid #e5e7eb', paddingTop: '10px' }}>
+                  <p style={{ margin: 0, fontSize: '10px', color: '#6b7280', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 'bold' }}>Non-Transferable</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div className="container mx-auto px-6 pt-32 pb-12 flex justify-center items-center min-h-[calc(100vh-100px)] relative">
           
           {/* Confetti Background */}

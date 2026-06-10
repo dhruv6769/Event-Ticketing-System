@@ -197,7 +197,34 @@ export default function Admin() {
   }, [navigate]);
 
   const handleLogout = () => {
+    const currentProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
+    if (currentProfile.email) {
+      const userFunds = JSON.parse(localStorage.getItem('userDataMap') || '{}');
+      userFunds[currentProfile.email] = {
+        ...(userFunds[currentProfile.email] || {}),
+        balance: localStorage.getItem('walletBalance'),
+        tx: localStorage.getItem('myTransactions'),
+        bookings: localStorage.getItem('myBookings'),
+        tickets: localStorage.getItem('supportTickets'),
+        notifications: localStorage.getItem('myNotifications'),
+        coupons: localStorage.getItem('myCoupons'),
+        upiPin: localStorage.getItem('upiPin') || null,
+      };
+      localStorage.setItem('userDataMap', JSON.stringify(userFunds));
+    }
+
+    localStorage.removeItem('userProfile');
+    localStorage.removeItem('walletBalance');
+    localStorage.removeItem('myTransactions');
+    localStorage.removeItem('myBookings');
+    localStorage.removeItem('supportTickets');
+    localStorage.removeItem('myNotifications');
+    localStorage.removeItem('upiPin');
+    localStorage.removeItem('myCoupons');
+    localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('isAdminLoggedIn');
+    localStorage.removeItem('token');
+    window.dispatchEvent(new Event('storage'));
     navigate('/login');
   };
 

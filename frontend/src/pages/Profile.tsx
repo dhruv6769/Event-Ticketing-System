@@ -362,6 +362,7 @@ export default function Profile() {
     localStorage.removeItem('myCoupons');
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('isAdminLoggedIn');
+    localStorage.removeItem('token');
     window.dispatchEvent(new Event('storage'));
     navigate('/login');
   };
