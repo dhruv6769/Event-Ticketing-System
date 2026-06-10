@@ -237,6 +237,30 @@ app.delete("/api/admin/users/:email", authenticateToken, async (req: any, res: a
   }
 });
 
+app.post("/api/admin/users/update-profile", authenticateToken, async (req: any, res: any) => {
+  try {
+    const requester = await prisma.user.findUnique({ where: { id: req.user.userId } });
+    if (!requester || requester.role !== "ADMIN") {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    
+    const { email, name, avatar } = req.body;
+    
+    const updatedUser = await prisma.user.update({
+      where: { email },
+      data: {
+        name: name,
+        avatar_url: avatar
+      }
+    });
+    
+    res.json({ message: "Profile updated in database", user: updatedUser });
+  } catch (error) {
+    console.error("Update profile error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 const lockMap: Record<string, string> = {};
 
 io.on("connection", (socket) => {

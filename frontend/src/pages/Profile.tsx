@@ -241,6 +241,27 @@ export default function Profile() {
           });
           if (res.ok) {
             const data = await res.json();
+            
+            // update balance visually
+            if (data.quick_upi_balance !== undefined) {
+              setWalletBalance(data.quick_upi_balance);
+            }
+            
+            // update profile from DB and lookup approved mock fields in registeredUsers
+            const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+            const matchedUser = registeredUsers.find((u: any) => u.email === data.email);
+            const approvedProfile = matchedUser?.profile || {};
+
+            const updatedProfile = {
+              name: data.name,
+              email: data.email,
+              avatar: data.avatar_url || '',
+              mobile: approvedProfile.mobile || (localStorage.getItem('userProfile') ? (JSON.parse(localStorage.getItem('userProfile')!).mobile || '9876543210') : '9876543210'),
+              city: approvedProfile.city || (localStorage.getItem('userProfile') ? (JSON.parse(localStorage.getItem('userProfile')!).city || 'Mumbai') : 'Mumbai')
+            };
+            setUserProfile(updatedProfile);
+            localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+
             if (data.bookings) {
               const mappedBookings = data.bookings.map((b: any) => ({
                 event: b.event_title,
@@ -256,13 +277,8 @@ export default function Profile() {
                 const url = await QRCode.toDataURL(`TIX-${b.event}-${idx}`);
                 setQrCodes((prev) => ({ ...prev, [idx]: url }));
               });
-              
-              // update balance visually
-              if (data.quick_upi_balance !== undefined) {
-                setWalletBalance(data.quick_upi_balance);
-              }
-              return;
             }
+            return;
           }
         }
       } catch (err) {

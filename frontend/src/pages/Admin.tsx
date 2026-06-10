@@ -257,10 +257,44 @@ export default function Admin() {
     }
   };
 
-  const handleApproveProfile = () => {
+  const handleApproveProfile = async () => {
     try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+      const token = localStorage.getItem('token');
+      
+      const res = await fetch(`${API_URL}/api/admin/users/update-profile`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          email: pendingUpdate.email,
+          name: pendingUpdate.name,
+          avatar: pendingUpdate.avatar
+        })
+      });
+      
+      if (!res.ok) {
+        const data = await res.json();
+        showAlert('Error', data.error || 'Failed to update database profile.', 'error');
+        return;
+      }
+      
       const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
       const updatedUsers = users.map((u: any) => u.email === pendingUpdate.email ? { ...u, profile: pendingUpdate } : u);
+      
+      // Update local admin's own profile too if they approved their own update
+      const currentProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
+      if (currentProfile.email === pendingUpdate.email) {
+        localStorage.setItem('userProfile', JSON.stringify({
+          ...currentProfile,
+          name: pendingUpdate.name,
+          avatar: pendingUpdate.avatar,
+          mobile: pendingUpdate.mobile,
+          city: pendingUpdate.city
+        }));
+      }
       
       // Free up space before saving to prevent QuotaExceededError
       localStorage.removeItem('pendingProfileUpdate');
@@ -272,7 +306,7 @@ export default function Admin() {
       showAlert('Approved', 'Profile update approved and applied.', 'success');
     } catch (err: any) {
       console.error(err);
-      showAlert('Error', 'Failed to approve. Image might be too large.', 'error');
+      showAlert('Error', 'Failed to approve profile update.', 'error');
     }
   };
 
