@@ -87,6 +87,9 @@ app.get("/api/users/profile", authenticateToken, async (req: any, res: any) => {
       include: {
         bookings: {
           orderBy: { created_at: 'desc' }
+        },
+        transactions: {
+          orderBy: { created_at: 'desc' }
         }
       }
     });
@@ -257,6 +260,50 @@ app.post("/api/admin/users/update-profile", authenticateToken, async (req: any, 
     res.json({ message: "Profile updated in database", user: updatedUser });
   } catch (error) {
     console.error("Update profile error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/api/admin/users/credit-balance", authenticateToken, async (req: any, res: any) => {
+  try {
+    const requester = await prisma.user.findUnique({ where: { id: req.user.userId } });
+    if (!requester || requester.role !== "ADMIN") {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    
+    const { email, amount } = req.body;
+    const amountVal = parseFloat(amount);
+    
+    if (isNaN(amountVal) || amountVal <= 0) {
+      return res.status(400).json({ error: "Invalid amount" });
+    }
+    
+    const targetUser = await prisma.user.findUnique({ where: { email } });
+    if (!targetUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    
+    const updatedUser = await prisma.user.update({
+      where: { email },
+      data: {
+        quick_upi_balance: {
+          increment: amountVal
+        }
+      }
+    });
+    
+    await prisma.transaction.create({
+      data: {
+        user_id: targetUser.id,
+        type: "CREDIT",
+        amount: amountVal,
+        description: "Funds Added via Admin Approval"
+      }
+    });
+    
+    res.json({ message: "Balance updated successfully", balance: updatedUser.quick_upi_balance });
+  } catch (error) {
+    console.error("Credit balance error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });

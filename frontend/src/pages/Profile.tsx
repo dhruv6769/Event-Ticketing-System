@@ -278,6 +278,16 @@ export default function Profile() {
                 setQrCodes((prev) => ({ ...prev, [idx]: url }));
               });
             }
+            if (data.transactions) {
+              const mappedTransactions = data.transactions.map((t: any) => ({
+                title: t.description,
+                date: new Date(t.created_at).toLocaleDateString() + ' • ' + new Date(t.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                amount: `${t.type === 'CREDIT' ? '+' : '-'}₹${t.amount}`,
+                type: t.type.toLowerCase()
+              }));
+              setTransactions(mappedTransactions);
+              localStorage.setItem('myTransactions', JSON.stringify(mappedTransactions));
+            }
             return;
           }
         }

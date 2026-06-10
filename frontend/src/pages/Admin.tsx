@@ -392,27 +392,52 @@ export default function Admin() {
     setTransferEmail(''); setTransferAmount(''); setTransferStep(1);
   };
 
-  const handleAcceptFund = (req: any) => {
-    const userFunds = JSON.parse(localStorage.getItem('userDataMap') || '{}');
-    if (!userFunds[req.userEmail]) userFunds[req.userEmail] = { balance: '0', tx: '[]', bookings: '[]', tickets: '[]', notifications: '[]' };
-    userFunds[req.userEmail].balance = (parseInt(userFunds[req.userEmail].balance || '0') + parseInt(req.amount)).toString();
-    const txs = JSON.parse(userFunds[req.userEmail].tx || '[]');
-    txs.unshift({ title: 'Funds Added via Admin Approval', date: new Date().toLocaleDateString() + ' • ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), amount: '+₹' + req.amount, type: 'credit' });
-    userFunds[req.userEmail].tx = JSON.stringify(txs);
-    const notifs = JSON.parse(userFunds[req.userEmail].notifications || '[]');
-    notifs.unshift({ id: Date.now(), message: `Your fund request for ₹${req.amount} was approved!`, date: new Date().toLocaleDateString(), read: false });
-    userFunds[req.userEmail].notifications = JSON.stringify(notifs);
-    localStorage.setItem('userDataMap', JSON.stringify(userFunds));
-    const cur = JSON.parse(localStorage.getItem('userProfile') || '{}');
-    if (cur.email === req.userEmail) {
-      localStorage.setItem('walletBalance', userFunds[req.userEmail].balance);
-      localStorage.setItem('myTransactions', userFunds[req.userEmail].tx);
-      localStorage.setItem('myNotifications', userFunds[req.userEmail].notifications);
-      window.dispatchEvent(new Event('storage'));
+  const handleAcceptFund = async (req: any) => {
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+    const token = localStorage.getItem('token');
+    
+    try {
+      const res = await fetch(`${API_URL}/api/admin/users/credit-balance`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          email: req.userEmail,
+          amount: req.amount
+        })
+      });
+      
+      if (!res.ok) {
+        const data = await res.json();
+        showAlert('Error', data.error || 'Failed to credit balance in database', 'error');
+        return;
+      }
+      
+      const userFunds = JSON.parse(localStorage.getItem('userDataMap') || '{}');
+      if (!userFunds[req.userEmail]) userFunds[req.userEmail] = { balance: '0', tx: '[]', bookings: '[]', tickets: '[]', notifications: '[]' };
+      userFunds[req.userEmail].balance = (parseInt(userFunds[req.userEmail].balance || '0') + parseInt(req.amount)).toString();
+      const txs = JSON.parse(userFunds[req.userEmail].tx || '[]');
+      txs.unshift({ title: 'Funds Added via Admin Approval', date: new Date().toLocaleDateString() + ' • ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), amount: '+₹' + req.amount, type: 'credit' });
+      userFunds[req.userEmail].tx = JSON.stringify(txs);
+      const notifs = JSON.parse(userFunds[req.userEmail].notifications || '[]');
+      notifs.unshift({ id: Date.now(), message: `Your fund request for ₹${req.amount} was approved!`, date: new Date().toLocaleDateString(), read: false });
+      userFunds[req.userEmail].notifications = JSON.stringify(notifs);
+      localStorage.setItem('userDataMap', JSON.stringify(userFunds));
+      const cur = JSON.parse(localStorage.getItem('userProfile') || '{}');
+      if (cur.email === req.userEmail) {
+        localStorage.setItem('walletBalance', userFunds[req.userEmail].balance);
+        localStorage.setItem('myTransactions', userFunds[req.userEmail].tx);
+        localStorage.setItem('myNotifications', userFunds[req.userEmail].notifications);
+        window.dispatchEvent(new Event('storage'));
+      }
+      const updated = fundRequests.filter((r) => r.id !== req.id);
+      setFundRequests(updated); localStorage.setItem('fundRequests', JSON.stringify(updated));
+      showAlert('Funds Approved', `₹${req.amount} approved for ${req.userEmail}`);
+    } catch (err) {
+      showAlert('Error', 'Failed to approve fund request.', 'error');
     }
-    const updated = fundRequests.filter((r) => r.id !== req.id);
-    setFundRequests(updated); localStorage.setItem('fundRequests', JSON.stringify(updated));
-    showAlert('Funds Approved', `₹${req.amount} approved for ${req.userEmail}`);
   };
 
   const handleRejectFund = (req: any) => {
