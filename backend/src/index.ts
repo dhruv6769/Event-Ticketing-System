@@ -113,7 +113,7 @@ app.post("/api/bookings", authenticateToken, async (req: any, res: any) => {
         event_date: eventDate,
         seats_summary: seatsSummary,
         total_amount: totalAmount,
-        status: "CONFIRMED",
+        payment_status: "SUCCESS",
         qr_code_url: `TICKET-` + Date.now()
       }
     });
@@ -122,6 +122,16 @@ app.post("/api/bookings", authenticateToken, async (req: any, res: any) => {
     await prisma.user.update({
       where: { id: req.user.userId },
       data: { quick_upi_balance: { decrement: totalAmount } }
+    });
+
+    // Log transaction history
+    await prisma.transaction.create({
+      data: {
+        user_id: req.user.userId,
+        type: "DEBIT",
+        amount: totalAmount,
+        description: `Ticket Purchase - ${eventTitle}`
+      }
     });
 
     res.json({ booking });
