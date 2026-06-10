@@ -15,7 +15,7 @@ const io = new Server(httpServer, {
   cors: { origin: "*" },
 });
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({});
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey_change_in_production";
 
 app.use(cors());
