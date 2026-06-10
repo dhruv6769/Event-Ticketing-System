@@ -6,11 +6,14 @@ import NarendraModiStadium from '../components/NarendraModiStadium';
 import WankhedeStadium from '../components/WankhedeStadium';
 import EdenGardens from '../components/EdenGardens';
 import ChinnaswamyStadium from '../components/ChinnaswamyStadium';
+import ChepaukStadium from '../components/ChepaukStadium';
+import SaltLakeStadium from '../components/SaltLakeStadium';
+import JawaharlalNehruKochiStadium from '../components/JawaharlalNehruKochiStadium';
 import MovieTheaterLayout from '../components/MovieTheaterLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageWrapper from '../components/PageWrapper';
 
-type LayoutType = 'narendra' | 'wankhede' | 'eden' | 'chinnaswamy' | 'velodrome' | 'theatre';
+type LayoutType = 'narendra' | 'wankhede' | 'eden' | 'chinnaswamy' | 'velodrome' | 'theatre' | 'chepauk' | 'saltlake' | 'kochi';
 
 const MOCK_EVENTS = [
   // Concerts
@@ -74,6 +77,9 @@ export default function SeatSelection() {
     : venueName.includes('narendra') ? 'narendra' 
     : venueName.includes('eden') ? 'eden'
     : venueName.includes('chinnaswamy') ? 'chinnaswamy'
+    : venueName.includes('chidambaram') || venueName.includes('chepauk') ? 'chepauk'
+    : venueName.includes('salt lake') || venueName.includes('saltlake') ? 'saltlake'
+    : venueName.includes('nehru') || venueName.includes('kochi') ? 'kochi'
     : venueName.includes('pvr') ? 'theatre'
     : 'velodrome';
 
@@ -195,6 +201,42 @@ export default function SeatSelection() {
   const renderChinnaswamy = () => {
     return (
       <ChinnaswamyStadium 
+        onBlockSelect={(blockName, price, angle) => {
+          setSelectedBlock(blockName);
+          setBlockPrice(price);
+          setSelectedBlockAngle(angle);
+        }} 
+      />
+    );
+  };
+
+  const renderChepauk = () => {
+    return (
+      <ChepaukStadium 
+        onBlockSelect={(blockName, price, angle) => {
+          setSelectedBlock(blockName);
+          setBlockPrice(price);
+          setSelectedBlockAngle(angle);
+        }} 
+      />
+    );
+  };
+
+  const renderSaltLake = () => {
+    return (
+      <SaltLakeStadium 
+        onBlockSelect={(blockName, price, angle) => {
+          setSelectedBlock(blockName);
+          setBlockPrice(price);
+          setSelectedBlockAngle(angle);
+        }} 
+      />
+    );
+  };
+
+  const renderKochi = () => {
+    return (
+      <JawaharlalNehruKochiStadium 
         onBlockSelect={(blockName, price, angle) => {
           setSelectedBlock(blockName);
           setBlockPrice(price);
@@ -460,6 +502,9 @@ export default function SeatSelection() {
               {activeLayout === 'wankhede' && 'Wankhede Stadium'}
               {activeLayout === 'eden' && 'Eden Gardens'}
               {activeLayout === 'chinnaswamy' && 'M. Chinnaswamy Stadium'}
+              {activeLayout === 'chepauk' && 'M.A. Chidambaram Stadium'}
+              {activeLayout === 'saltlake' && 'Salt Lake Stadium'}
+              {activeLayout === 'kochi' && 'Jawaharlal Nehru Stadium (Kochi)'}
               {activeLayout === 'velodrome' && 'NSCI Velodrome'}
               {activeLayout === 'theatre' && 'Movie Theatre'}
             </h2>
@@ -475,6 +520,9 @@ export default function SeatSelection() {
               <option value="wankhede">Wankhede Stadium</option>
               <option value="eden">Eden Gardens</option>
               <option value="chinnaswamy">M. Chinnaswamy Stadium</option>
+              <option value="chepauk">M.A. Chidambaram Stadium</option>
+              <option value="saltlake">Salt Lake Stadium</option>
+              <option value="kochi">Jawaharlal Nehru Stadium (Kochi)</option>
               <option value="velodrome">NSCI Velodrome</option>
               <option value="theatre">Movie Theatre</option>
             </select>
@@ -487,6 +535,9 @@ export default function SeatSelection() {
                 {activeLayout === 'wankhede' && renderWankhede()}
                 {activeLayout === 'eden' && renderEdenGardens()}
                 {activeLayout === 'chinnaswamy' && renderChinnaswamy()}
+                {activeLayout === 'chepauk' && renderChepauk()}
+                {activeLayout === 'saltlake' && renderSaltLake()}
+                {activeLayout === 'kochi' && renderKochi()}
                 {activeLayout === 'velodrome' && renderVelodrome()}
                 {activeLayout === 'theatre' && renderTheatre()}
               </>

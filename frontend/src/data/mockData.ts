@@ -18,7 +18,10 @@ export const MOCK_EVENTS = [
   { id: 12, title: "Deadpool & Wolverine", category: "Movie", venue: "PVR Icon", date: "Daily", price: "₹350", image: "/highres/deadpool.jpg", badge: "Available", imdbRating: "8.2", imdbVotes: "450K" },
   { id: 13, title: "Pushpa 2: The Rule", category: "Movie", venue: "PVR Director's Cut", date: "Aug 15, 2026", price: "₹500", image: "/highres/pushpa.jpg", badge: "Almost Full", imdbRating: "9.1", imdbVotes: "2.1M" },
   { id: 14, title: "Dune: Part Two IMAX", category: "Movie", venue: "PVR Icon", date: "Daily", price: "₹600", image: "/highres/dune.jpg", badge: "Available", imdbRating: "8.6", imdbVotes: "890K" },
-  { id: 15, title: "Oppenheimer Re-release", category: "Movie", venue: "PVR Director's Cut", date: "Daily", price: "₹400", image: "/highres/oppenheimer.jpg", badge: "Available", imdbRating: "8.9", imdbVotes: "1.5M" }
+  { id: 15, title: "Oppenheimer Re-release", category: "Movie", venue: "PVR Director's Cut", date: "Daily", price: "₹400", image: "/highres/oppenheimer.jpg", badge: "Available", imdbRating: "8.9", imdbVotes: "1.5M" },
+  { id: 16, title: "Kolkata Derby: Mohun Bagan vs East Bengal", category: "Sports", venue: "Salt Lake Stadium", date: "Nov 30, 2026", price: "₹300", image: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=800&q=80", badge: "Selling Fast", teams: { home: { name: 'MBSG', form: ['W','W','W'] }, away: { name: 'EBFC', form: ['D','L','W'] } } },
+  { id: 17, title: "ISL Match: Kerala Blasters vs Mumbai City", category: "Sports", venue: "Jawaharlal Nehru Stadium (Kochi)", date: "Dec 15, 2026", price: "₹240", image: "https://images.unsplash.com/photo-1518063319789-7217e6706b04?auto=format&fit=crop&w=800&q=80", badge: "Almost Full", teams: { home: { name: 'KBFC', form: ['W','D','L'] }, away: { name: 'MCFC', form: ['W','W','D'] } } },
+  { id: 18, title: "IPL Match: CSK vs RCB", category: "Sports", venue: "M.A. Chidambaram Stadium", date: "April 02, 2027", price: "₹1000", image: "https://images.unsplash.com/photo-1595113316349-9fa4ee24f884?auto=format&fit=crop&w=800&q=80", badge: "Selling Fast", teams: { home: { name: 'CSK', form: ['W','W','L'] }, away: { name: 'RCB', form: ['L','W','W'] } } }
 ];
 
 export const VENUE_DATA = [
@@ -75,5 +78,32 @@ export const VENUE_DATA = [
     image: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
     description: "A modern multiplex featuring IMAX screens and Dolby Atmos sound for an immersive experience.",
     videoUrl: "https://www.youtube.com/embed/kAV3I9Qiobo?autoplay=1&mute=1&controls=0&loop=1&playlist=kAV3I9Qiobo&playsinline=1"
+  },
+  {
+    id: "chepauk",
+    name: "M.A. Chidambaram Stadium",
+    location: "Chennai, Tamil Nadu",
+    capacity: "38,223",
+    image: "https://images.unsplash.com/photo-1595113316349-9fa4ee24f884?auto=format&fit=crop&w=800&q=80",
+    description: "Commonly known as the Chepauk Stadium, this historic venue is famed for its spin-friendly tracks and highly knowledgeable crowd.",
+    videoUrl: "https://www.youtube.com/embed/V6H3xU740s0?autoplay=1&mute=1&controls=0&loop=1&playlist=V6H3xU740s0&playsinline=1"
+  },
+  {
+    id: "saltlake",
+    name: "Salt Lake Stadium",
+    location: "Kolkata, West Bengal",
+    capacity: "85,000",
+    image: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=800&q=80",
+    description: "Also known as Vivekananda Yuba Bharati Krirangan, it is one of the largest football stadiums in Asia and the home of Indian football.",
+    videoUrl: "https://www.youtube.com/embed/O4i0Pec5h9M?autoplay=1&mute=1&controls=0&loop=1&playlist=O4i0Pec5h9M&playsinline=1"
+  },
+  {
+    id: "jln-kochi",
+    name: "Jawaharlal Nehru Stadium (Kochi)",
+    location: "Kochi, Kerala",
+    capacity: "40,000",
+    image: "https://images.unsplash.com/photo-1518063319789-7217e6706b04?auto=format&fit=crop&w=800&q=80",
+    description: "A multi-purpose stadium famed for the massive, passionate yellow sea of Kerala Blasters FC supporters.",
+    videoUrl: "https://www.youtube.com/embed/7aI5i8c187s?autoplay=1&mute=1&controls=0&loop=1&playlist=7aI5i8c187s&playsinline=1"
   }
 ];
