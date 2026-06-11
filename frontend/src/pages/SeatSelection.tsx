@@ -589,19 +589,12 @@ export default function SeatSelection() {
               <circle cx="1150" cy="1150" r="450" fill="url(#light-bottom-right)" pointerEvents="none" />
 
               {/* Smooth rotating container centered exactly on pitch center (500, 800) */}
-              <g 
-                style={{ 
-                  transform: `rotate(${selectedBlockAngle}deg)`,
-                  transformOrigin: '500px 800px',
-                  transformBox: 'view-box',
-                  transition: 'transform 1200ms ease-in-out'
-                }}
-              >
+              <g>
                 {isFootball ? (
                   // Football Pitch
                   <g 
                     style={{ 
-                      transform: `rotate(${-selectedBlockAngle}deg)`,
+                      transform: `rotate(${270 - selectedBlockAngle}deg)`,
                       transformOrigin: '500px 800px',
                       transformBox: 'view-box',
                       transition: 'transform 1200ms ease-in-out'
@@ -657,7 +650,7 @@ export default function SeatSelection() {
                   // Cricket Pitch
                   <g 
                     style={{ 
-                      transform: `rotate(${-selectedBlockAngle}deg)`,
+                      transform: `rotate(${270 - selectedBlockAngle}deg)`,
                       transformOrigin: '500px 800px',
                       transformBox: 'view-box',
                       transition: 'transform 1200ms ease-in-out'
