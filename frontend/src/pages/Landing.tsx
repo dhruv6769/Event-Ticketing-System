@@ -213,7 +213,7 @@ export default function Landing() {
             transition={{ duration: 1, delay: 0.6 }}
             className="text-xl md:text-2xl text-gray-300 font-medium mb-12 max-w-2xl mx-auto h-16"
           >
-            {sloganText}<span className="animate-pulse text-[var(--color-brand)]">_</span>
+            {sloganText}
           </motion.p>
 
           <motion.div

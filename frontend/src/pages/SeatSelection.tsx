@@ -422,11 +422,6 @@ export default function SeatSelection() {
             </div>
           </div>
 
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/50 backdrop-blur px-8 py-4 rounded-full flex gap-8 shadow-2xl z-20 border border-white/10">
-            <div className="flex items-center gap-3"><div className="w-4 h-3 rounded-sm bg-slate-700"></div><span className="text-sm font-medium">Available</span></div>
-            <div className="flex items-center gap-3"><div className="w-4 h-3 rounded-sm bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div><span className="text-sm font-medium text-green-400">Selected</span></div>
-            <div className="flex items-center gap-3"><div className="w-4 h-3 rounded-sm bg-red-500 opacity-50"></div><span className="text-sm font-medium text-gray-400">Locked</span></div>
-          </div>
         </div>
       );
     }
@@ -438,8 +433,8 @@ export default function SeatSelection() {
     const seats = [];
     const cx = 500;
     const cy = 1300; // Pitch center is far below
-    const rIn = 710; // Front row radius
-    const rOut = 1200; // Back row radius
+    const rIn = 950; // Front row radius
+    const rOut = 1450; // Back row radius
     const baseAngleSpan = 50;
 
     if (isStraight) {
@@ -447,7 +442,7 @@ export default function SeatSelection() {
         const seatsInThisRow = 20 + Math.floor((rIdx / totalRows) * 12);
         const seatWidth = 14;
         const rowHeight = 16;
-        const startY = 600; 
+        const startY = 500; 
         
         const y = startY - rIdx * rowHeight;
         const startX = cx - ((seatsInThisRow - 1) * seatWidth) / 2;
@@ -517,7 +512,7 @@ export default function SeatSelection() {
         <div className="flex-1 w-full h-full flex items-center justify-center -mt-10 relative">
           <div className="w-full max-w-[750px] max-h-[750px] aspect-square relative">
             <svg 
-              viewBox="-150 -150 1300 1300" 
+              viewBox="-450 -150 1900 1900" 
               className="w-full h-full drop-shadow-2xl"
             >
               <defs>
@@ -707,11 +702,7 @@ export default function SeatSelection() {
           </div>
         </div>
 
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/50 backdrop-blur px-8 py-4 rounded-full flex gap-8 shadow-2xl z-20 border border-white/10">
-          <div className="flex items-center gap-3"><div className="w-4 h-3 rounded-sm bg-slate-700"></div><span className="text-sm font-medium">Available</span></div>
-          <div className="flex items-center gap-3"><div className="w-4 h-3 rounded-sm bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div><span className="text-sm font-medium text-green-400">Selected</span></div>
-          <div className="flex items-center gap-3"><div className="w-4 h-3 rounded-sm bg-red-500 opacity-50"></div><span className="text-sm font-medium text-gray-400">Locked</span></div>
-        </div>
+
       </div>
     );
   };
@@ -779,8 +770,7 @@ export default function SeatSelection() {
 
           <div className="flex gap-6 mt-8 text-sm font-medium bg-black/40 px-8 py-4 rounded-full border border-white/10 backdrop-blur-md shadow-xl">
             <div className="flex items-center gap-3"><div className="w-4 h-4 bg-slate-700 rounded-sm"></div> <span className="text-gray-300">Available</span></div>
-            <div className="flex items-center gap-3"><div className="w-4 h-4 bg-[var(--color-brand)] rounded-sm shadow-[0_0_10px_var(--color-brand)]"></div> <span className="text-white">Booked</span></div>
-            <div className="flex items-center gap-3"><div className="w-4 h-4 bg-[var(--color-gold)] rounded-sm shadow-[0_0_10px_var(--color-gold)]"></div> <span className="text-white">Locked</span></div>
+            <div className="flex items-center gap-3"><div className="w-4 h-4 bg-red-500 rounded-sm shadow-[0_0_10px_#ef4444]"></div> <span className="text-white">Locked</span></div>
             <div className="flex items-center gap-3"><div className="w-4 h-4 bg-green-500 rounded-sm shadow-[0_0_10px_#22c55e]"></div> <span className="text-white">Selected</span></div>
           </div>
         </motion.div>
