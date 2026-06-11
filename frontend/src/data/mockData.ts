@@ -21,7 +21,7 @@ export const MOCK_EVENTS = [
   { id: 15, title: "Oppenheimer Re-release", category: "Movie", venue: "PVR Director's Cut", date: "Daily", price: "₹400", image: "/highres/oppenheimer.jpg", badge: "Available", imdbRating: "8.9", imdbVotes: "1.5M" },
   { id: 16, title: "Kolkata Derby: Mohun Bagan vs East Bengal", category: "Sports", venue: "Salt Lake Stadium", date: "Feb 03, 2027", price: "₹300", image: "/highres/event_kolkata_derby.jpg?v=1", badge: "Selling Fast", teams: { home: { name: 'MBSG', form: ['W','W','W'] }, away: { name: 'EBFC', form: ['D','L','W'] } } },
   { id: 17, title: "ISL Match: Kerala Blasters vs Mumbai City", category: "Sports", venue: "Jawaharlal Nehru Stadium (Kochi)", date: "Dec 15, 2026", price: "₹240", image: "/highres/event_kbfc_mcfc.png?v=1", badge: "Almost Full", teams: { home: { name: 'KBFC', form: ['W','D','L'] }, away: { name: 'MCFC', form: ['W','W','D'] } } },
-  { id: 18, title: "IPL Match: RCB vs CSK", category: "Sports", venue: "M. Chinnaswamy Stadium", date: "April 05, 2027", price: "₹1000", image: "/highres/event_csk_rcb.jpg?v=1", badge: "Selling Fast", teams: { home: { name: 'RCB', form: ['L','W','W'] }, away: { name: 'CSK', form: ['W','W','L'] } } }
+  { id: 18, title: "IPL Match: CSK vs RCB", category: "Sports", venue: "M.A. Chidambaram Stadium", date: "April 05, 2027", price: "₹1000", image: "/highres/event_csk_rcb.jpg?v=1", badge: "Selling Fast", teams: { home: { name: 'CSK', form: ['W','W','L'] }, away: { name: 'RCB', form: ['L','W','W'] } } }
 ];
 
 export const VENUE_DATA = [
