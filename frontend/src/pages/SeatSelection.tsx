@@ -302,6 +302,12 @@ export default function SeatSelection() {
   };
 
   const renderVelodrome = () => {
+    const selectVelodromeBlock = (blockName: string, price: number, angle: number) => {
+      setSelectedBlock(blockName);
+      setBlockPrice(price);
+      setSelectedBlockAngle(angle);
+    };
+
     return (
       <div className="relative w-[500px] h-80 flex items-center justify-center">
         {/* Track */}
@@ -310,22 +316,22 @@ export default function SeatSelection() {
         </div>
         
         {/* North Stand */}
-        <div onClick={() => setSelectedBlock("North Track Stand")} className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-12 bg-yellow-500/20 border border-yellow-500/50 rounded-t-3xl cursor-pointer hover:bg-yellow-500/40 flex items-center justify-center text-xs font-bold">
+        <div onClick={() => selectVelodromeBlock("North Track Stand", 1000, 270)} className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-12 bg-yellow-500/20 border border-yellow-500/50 rounded-t-3xl cursor-pointer hover:bg-yellow-500/40 flex items-center justify-center text-xs font-bold">
           North Track Stand
         </div>
         
         {/* South Stand */}
-        <div onClick={() => setSelectedBlock("South Track Stand")} className="absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-12 bg-yellow-500/20 border border-yellow-500/50 rounded-b-3xl cursor-pointer hover:bg-yellow-500/40 flex items-center justify-center text-xs font-bold">
+        <div onClick={() => selectVelodromeBlock("South Track Stand", 1000, 90)} className="absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-12 bg-yellow-500/20 border border-yellow-500/50 rounded-b-3xl cursor-pointer hover:bg-yellow-500/40 flex items-center justify-center text-xs font-bold">
           South Track Stand
         </div>
 
         {/* East Curve */}
-        <div onClick={() => setSelectedBlock("East Curve")} className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-40 bg-orange-500/20 border border-orange-500/50 rounded-r-full cursor-pointer hover:bg-orange-500/40 flex items-center justify-center text-xs font-bold writing-vertical-rl rotate-180">
+        <div onClick={() => selectVelodromeBlock("East Curve", 1500, 0)} className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-40 bg-orange-500/20 border border-orange-500/50 rounded-r-full cursor-pointer hover:bg-orange-500/40 flex items-center justify-center text-xs font-bold writing-vertical-rl rotate-180">
           EAST CURVE
         </div>
 
         {/* West Curve */}
-        <div onClick={() => setSelectedBlock("West Curve")} className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-40 bg-orange-500/20 border border-orange-500/50 rounded-l-full cursor-pointer hover:bg-orange-500/40 flex items-center justify-center text-xs font-bold writing-vertical-rl">
+        <div onClick={() => selectVelodromeBlock("West Curve", 1500, 180)} className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-40 bg-orange-500/20 border border-orange-500/50 rounded-l-full cursor-pointer hover:bg-orange-500/40 flex items-center justify-center text-xs font-bold writing-vertical-rl">
           WEST CURVE
         </div>
       </div>
@@ -589,7 +595,14 @@ export default function SeatSelection() {
               <circle cx="1150" cy="1150" r="450" fill="url(#light-bottom-right)" pointerEvents="none" />
 
               {/* Smooth rotating container centered exactly on pitch center (500, 800) */}
-              <g>
+              <g
+                style={{
+                  transform: `rotate(${selectedBlockAngle - 270}deg)`,
+                  transformOrigin: '500px 800px',
+                  transformBox: 'view-box',
+                  transition: 'transform 1200ms ease-in-out'
+                }}
+              >
                 {isFootball ? (
                   // Football Pitch
                   <g 
